@@ -52,6 +52,7 @@ enum AppearanceMode: String, CaseIterable, Identifiable {
 }
 
 struct ContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
     let wearablesVM: WearablesViewModel
     let hermesVM: HermesSessionViewModel
 
@@ -77,6 +78,9 @@ struct ContentView: View {
                 )
             } else {
                 header
+                if hermesVM.canShowChatCamera || hermesVM.chatCameraVisible {
+                    chatCameraPanel
+                }
                 conversationArea
                 quickActions
             }
@@ -138,9 +142,55 @@ struct ContentView: View {
             guard state == .registered else { return }
             Task { await hermesVM.ensureGlassesCameraAfterPairing() }
         }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { hermesVM.hideChatCamera() }
+        }
+        .onChange(of: showLens) { _, visible in
+            if visible { hermesVM.hideChatCamera() }
+        }
+        .onDisappear { hermesVM.hideChatCamera() }
         .onChange(of: hermesVM.phoneModeActive) { _, active in
             if !active { showTranscript = false }
         }
+    }
+
+    private var chatCameraPanel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label("Glasses camera", systemImage: "eyeglasses")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Button(hermesVM.chatCameraVisible ? "Hide camera" : "Show camera") {
+                    if hermesVM.chatCameraVisible { hermesVM.hideChatCamera() }
+                    else { hermesVM.showChatCamera() }
+                }
+                .buttonStyle(.bordered)
+                .accessibilityHint("Toggle a local live preview while continuing your conversation")
+            }
+            if hermesVM.chatCameraVisible {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12).fill(HermesTheme.lensChrome)
+                    if let image = hermesVM.chatCameraImage {
+                        Image(uiImage: image)
+                            .resizable().scaledToFit()
+                            .accessibilityLabel("Live view from glasses")
+                    } else {
+                        Image(systemName: "video")
+                            .foregroundStyle(.white)
+                            .accessibilityHidden(true)
+                    }
+                }
+                .frame(height: 150)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                Text(hermesVM.chatCameraStatus)
+                    .font(.caption).foregroundStyle(.secondary)
+                    .accessibilityLabel("Camera status: \(hermesVM.chatCameraStatus)")
+                Text("Preview only. Ask a visual question to share an image with Hermes.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
     }
 
     /// What's wrong with the glasses right now, if anything. Surfaced next
@@ -719,7 +769,9 @@ struct ContentView: View {
 
     private func open(_ app: HermesApp) {
         switch app.id {
-        case "lens": showLens = true
+        case "lens":
+            hermesVM.hideChatCamera()
+            showLens = true
         case "people": showPeople = true
         case "map": showMap = true
         case "log": showObjectLog = true

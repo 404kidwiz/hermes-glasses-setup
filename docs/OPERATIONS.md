@@ -6,6 +6,12 @@ Keep Tailscale connected on phone and Mac. Keep the Mac awake, powered and onlin
 
 Use the app's existing Settings to choose speech mode or endpoints. On-device speech changes the voice and bypasses the failed Edge speech route. Free models, tool-heavy tasks and council fan-out are not guaranteed fast.
 
+## Optional camera preview during conversation
+
+Start Listening with the glasses selected, then tap **Show camera** on the conversation screen. The panel displays **Connecting**, **Live**, or **Reconnecting**. Tap **Hide camera** to release the preview while continuing voice conversation. It starts hidden; there is no automatic camera preview at app launch.
+
+The preview displays locally; it does not continuously send video to Hermes. Asking a visual question still shares an image through the existing visual-query path. Opening Lens, starting recording, switching microphones, ending the session or backgrounding the app hides the preview. Show it again explicitly when needed. The panel is available for active glasses sessions, not phone-camera mode or recording.
+
 ## Troubleshooting
 
 | Symptom | Inspect | Recovery |

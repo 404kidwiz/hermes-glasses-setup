@@ -7,3 +7,5 @@ Reference acceptance: signed physical iPhone install/launch, phone voice on Wi-F
 This is a source/setup kit, not a generalized installer. Signing team, bundle ID and renewal phone identity require personalization; service home/username paths are portable. Personal runtime configuration, credentials, provisioning material and logs are excluded.
 
 Lens streaming repair (2026-11-03): failed-stream cleanup, one bounded video-error retry, low-resolution streaming and lifecycle ownership guards. Signed reference build and focused review passed; wearer confirmed a working 30-second glasses preview with phone cameras covered. Longer video endurance remains untested.
+
+Optional conversation preview (2026-11-03): Show camera/Hide camera, live status, local display and owner-scoped cleanup. Reference wearer confirmed simultaneous glasses video/voice and Hide/Show without interrupting voice. Extended video endurance and rapid-toggle/background preview tests remain unverified.

@@ -66,3 +66,9 @@ Run `bash tests/bridge-recovery/run.sh` from `app/` for controlled transport che
 A reported Lens `videoStreamingError` exposed an asynchronous failure path that left the failed stream allocated. The repair releases it, clears the stale preview, retries that error once, and uses low-resolution live streaming. Generation checks protect against stale callbacks and late startup cleanup after Stop or replacement. Permission and thermal errors are not automatically retried.
 
 Signed reference-device build/install/launch and focused independent static review passed. With iPhone cameras covered, the wearer confirmed the glasses preview followed their view for 30 seconds without the error. This validates the repaired path in that test; it does not identify the underlying SDK/hardware cause or establish long-duration video reliability. Fault-injected recovery and Stop-during-start hardware tests remain unverified.
+
+## Conversation preview acceptance — 2026-11-03
+
+The optional conversation preview passed the signed reference-device build and focused independent static ownership review. The wearer confirmed simultaneous live glasses video and a spoken reply with iPhone cameras covered, then confirmed voice still worked after Hide camera and the preview returned to Live after Show camera. Cleanup uses a stream owner UUID so rejected/obsolete preview work cannot stop a different feature's stream. A starting preview reserves the camera against competing still capture until frames are available.
+
+The public unsigned build and secret scan are publication checks; they do not substitute for colleague-device testing. Rapid repeated toggles, background/foreground preview transitions, and extended simultaneous video/voice endurance remain untested on hardware. Existing voice-only locked-screen acceptance does not prove background camera operation; the preview deliberately hides when the app becomes inactive.

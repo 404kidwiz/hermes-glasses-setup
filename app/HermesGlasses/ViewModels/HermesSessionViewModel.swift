@@ -91,6 +91,13 @@ final class HermesSessionViewModel {
     var isGlassesConnected: Bool = false
     var bridgeStatus: BridgeStatus = .unknown
     var bridgeDiagnostics = "No bridge session yet"
+    var chatCameraVisible = false
+    var chatCameraImage: UIImage?
+    var chatCameraStatus = "Connecting…"
+    @ObservationIgnored private var chatCameraTask: Task<Void, Never>?
+    @ObservationIgnored private var chatCameraGeneration = 0
+    @ObservationIgnored private var chatCameraOwnerID: UUID?
+
     @ObservationIgnored private var idleReconnectTask: Task<Void, Never>?
     @ObservationIgnored private var recoveryAttemptUsed = false
     @ObservationIgnored private var sessionEpoch = 0
@@ -1734,6 +1741,7 @@ final class HermesSessionViewModel {
     func startConversationCapture() {
         guard !conversationCaptureActive,
               connectionState != .disconnected else { return }
+        hideChatCamera()
         conversationCaptureActive = true
         captureModel = ConversationCaptureModel()
         capturePhotos = []
@@ -2268,6 +2276,7 @@ final class HermesSessionViewModel {
     ///   False means it didn't materialise and the iPhone mic is live.
     @discardableResult
     func setMicSource(_ target: MicSource, announceFallback: Bool = true) async -> Bool {
+        hideChatCamera()
         micSource = target
         UserDefaults.standard.set(target.rawValue, forKey: Self.micSourceKey)
 
@@ -2320,7 +2329,87 @@ final class HermesSessionViewModel {
         }
     }
 
+    var canShowChatCamera: Bool {
+        connectionState != .disconnected && connectionState != .connecting
+            && visionRoute == .glasses && !conversationCaptureActive
+    }
+
+    func showChatCamera() {
+        guard canShowChatCamera, !chatCameraVisible, !cameraManager.isStreaming else { return }
+        chatCameraVisible = true
+        chatCameraGeneration &+= 1
+        let generation = chatCameraGeneration
+        chatCameraTask = Task { @MainActor [weak self] in
+            await self?.startChatCamera(generation: generation, retry: false)
+        }
+    }
+
+    private func startChatCamera(generation: Int, retry: Bool) async {
+        guard chatCameraVisible, chatCameraGeneration == generation,
+              !Task.isCancelled, canShowChatCamera else { return }
+        chatCameraStatus = retry ? "Reconnecting…" : "Connecting…"
+        let granted = await ensureCameraPermission(interactive: true)
+        guard chatCameraVisible, chatCameraGeneration == generation,
+              !Task.isCancelled else { return }
+        guard granted else {
+            chatCameraStatus = "Camera permission required. Enable access in Meta AI."
+            return
+        }
+        let ownerID = UUID()
+        chatCameraOwnerID = ownerID
+        do {
+            try await cameraManager.startLiveStream(onVideoFrame: { [weak self] frame in
+                Task { @MainActor [weak self] in
+                    guard let self, self.chatCameraVisible,
+                          self.chatCameraGeneration == generation else { return }
+                    if let image = frame.makeUIImage() {
+                        self.chatCameraImage = image
+                        self.chatCameraStatus = "Live"
+                    }
+                }
+            }, onError: { [weak self] message in
+                Task { @MainActor [weak self] in
+                    guard let self, self.chatCameraVisible,
+                          self.chatCameraGeneration == generation else { return }
+                    self.chatCameraGeneration &+= 1
+                    let nextGeneration = self.chatCameraGeneration
+                    self.chatCameraTask?.cancel()
+                    self.cameraManager.stopLiveStream(ownerID: ownerID)
+                    self.chatCameraOwnerID = nil
+                    self.chatCameraImage = nil
+                    guard message == "videoStreamingError", !retry else {
+                        self.chatCameraStatus = "Camera stopped: \(message). Hide and show to retry."
+                        return
+                    }
+                    self.chatCameraStatus = "Reconnecting…"
+                    self.chatCameraTask = Task { @MainActor [weak self] in
+                        do { try await Task.sleep(nanoseconds: 1_000_000_000) } catch { return }
+                        await self?.startChatCamera(generation: nextGeneration, retry: true)
+                    }
+                }
+            }, ownerID: ownerID)
+        } catch {
+            guard chatCameraVisible, chatCameraGeneration == generation,
+                  !Task.isCancelled else { return }
+            cameraManager.stopLiveStream(ownerID: ownerID)
+            chatCameraOwnerID = nil
+            chatCameraImage = nil
+            chatCameraStatus = "Camera unavailable: \(error.localizedDescription). Hide and show to retry."
+        }
+    }
+
+    func hideChatCamera() {
+        chatCameraGeneration &+= 1
+        chatCameraTask?.cancel()
+        chatCameraTask = nil
+        if let ownerID = chatCameraOwnerID { cameraManager.stopLiveStream(ownerID: ownerID) }
+        chatCameraOwnerID = nil
+        chatCameraVisible = false
+        chatCameraImage = nil
+    }
+
     func endSession() {
+        hideChatCamera()
         sessionEpoch &+= 1
         idleReconnectTask?.cancel()
         idleReconnectTask = nil

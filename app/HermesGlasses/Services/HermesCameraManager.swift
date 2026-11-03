@@ -67,6 +67,7 @@ final class HermesCameraManager: @unchecked Sendable {
         // one-shot-stream rule: exactly one persistent stream, torn down
         // by stopLiveStream(). While it runs, capturePhoto() serves the
         // latest live frame instead of opening a competing stream.
+        var liveOwnerID: UUID?
         var liveGeneration = 0
         var liveStarting = false
         var liveStream: MWDATCamera.Stream?
@@ -116,7 +117,8 @@ final class HermesCameraManager: @unchecked Sendable {
         }
 
         let entry: Entry = stateLock.withLockUnchecked { state in
-            if state.captureInFlight { return .busy }
+            // A starting live preview owns the camera even before its first frame.
+            if state.captureInFlight || state.liveStarting || state.liveStream != nil { return .busy }
             guard let session = state.deviceSession else { return .noSession }
             state.captureInFlight = true
             return .proceed(session)
@@ -192,8 +194,10 @@ final class HermesCameraManager: @unchecked Sendable {
     /// `VisionFrame` happens in exactly one place.
     func startLiveStream(
         onVideoFrame: @escaping @Sendable (VideoFrame) -> Void,
-        onError: @escaping @Sendable (String) -> Void
+        onError: @escaping @Sendable (String) -> Void,
+        ownerID: UUID? = nil
     ) async throws {
+        try Task.checkCancellation()
         enum Entry {
             case noSession, busy, inUse
             case proceed(DeviceSession, Int)
@@ -204,6 +208,7 @@ final class HermesCameraManager: @unchecked Sendable {
             if state.liveStream != nil || state.liveStarting { return .inUse }
             state.liveGeneration &+= 1
             state.liveStarting = true
+            state.liveOwnerID = ownerID
             return .proceed(session, state.liveGeneration)
         }
         let session: DeviceSession
@@ -311,10 +316,16 @@ final class HermesCameraManager: @unchecked Sendable {
         stopLiveStream(ifGeneration: nil)
     }
 
-    private func stopLiveStream(ifGeneration expected: Int?) {
+    func stopLiveStream(ownerID: UUID) {
+        stopLiveStream(ifGeneration: nil, ownerID: ownerID)
+    }
+
+    private func stopLiveStream(ifGeneration expected: Int?, ownerID: UUID? = nil) {
         let (stream, tokens): (MWDATCamera.Stream?, [AnyListenerToken]) =
             stateLock.withLockUnchecked { state in
                 if let expected, state.liveGeneration != expected { return (nil, []) }
+                if let ownerID, state.liveOwnerID != ownerID { return (nil, []) }
+                state.liveOwnerID = nil
                 state.liveGeneration &+= 1
                 state.liveStarting = false
                 let out = (state.liveStream, state.liveTokens)
