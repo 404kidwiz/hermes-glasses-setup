@@ -29,3 +29,5 @@ Simulator and signed-device builds passed during integration; EncounterStore and
 Final GUI build verification: simulator, signed iPhone and sanitized unsigned public builds passed. Updated app installed and launched successfully. Public secret scan found no leaks. Wearer confirmed explicit glasses microphone selection and Stop speaking: playback stopped and the session stayed connected.
 
 Physical GUI acceptance follow-up (2026-11-03): wearer selected “Glasses Mic (call screen),” requested “Count to twenty,” and confirmed Stop speaking stopped playback while the session stayed connected. This verifies the tested control flow by user report; it does not establish full accessibility or long-session endurance.
+
+Deletion-cancel acceptance (2026-11-03): user confirmed that tapping Delete, then Cancel, left the saved entry visible and able to open normally. The tested collection was not specified (People or Object Log), so this confirms the exercised path only. Confirmed deletion, both collections independently, and full VoiceOver remain unverified.
