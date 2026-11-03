@@ -67,6 +67,8 @@ final class HermesCameraManager: @unchecked Sendable {
         // one-shot-stream rule: exactly one persistent stream, torn down
         // by stopLiveStream(). While it runs, capturePhoto() serves the
         // latest live frame instead of opening a competing stream.
+        var liveGeneration = 0
+        var liveStarting = false
         var liveStream: MWDATCamera.Stream?
         var liveTokens: [AnyListenerToken] = []
         var latestLiveFrame: VideoFrame?
@@ -194,34 +196,42 @@ final class HermesCameraManager: @unchecked Sendable {
     ) async throws {
         enum Entry {
             case noSession, busy, inUse
-            case proceed(DeviceSession)
+            case proceed(DeviceSession, Int)
         }
         let entry: Entry = stateLock.withLockUnchecked { state in
             guard let session = state.deviceSession else { return .noSession }
             if state.captureInFlight { return .busy }
-            if state.liveStream != nil { return .inUse }
-            return .proceed(session)
+            if state.liveStream != nil || state.liveStarting { return .inUse }
+            state.liveGeneration &+= 1
+            state.liveStarting = true
+            return .proceed(session, state.liveGeneration)
         }
         let session: DeviceSession
+        let generation: Int
         switch entry {
         case .noSession: throw HermesCameraError.noSession
         case .busy: throw HermesCameraError.captureInProgress
         case .inUse: throw HermesCameraError.streamInUse
-        case .proceed(let s): session = s
+        case .proceed(let s, let g): session = s; generation = g
+        }
+        defer {
+            stateLock.withLockUnchecked { state in
+                if state.liveGeneration == generation { state.liveStarting = false }
+            }
         }
 
-        // Resolution is negotiated, not assumed. This asked for .high while
-        // every path that actually works on device - one-shot capture, and
-        // Meta's own CameraAccess sample - uses .low, and addStream returns
-        // a bare nil when it won't serve what you asked for. Highest first,
-        // then down; snaps are cropped from these frames so more pixels are
-        // nice, not necessary.
+        // Lens runs continuously alongside Bluetooth voice. Use the same
+        // low-bandwidth configuration as still capture; accepting a high
+        // resolution stream does not guarantee it will stay streaming.
         var stream: MWDATCamera.Stream?
         var used: StreamingResolution = .low
         var attempts: [String] = []
 
         outer: for pass in 0..<2 {
-            for resolution in [StreamingResolution.high, .medium, .low] {
+            for resolution in [StreamingResolution.low] {
+                try Task.checkCancellation()
+                guard stateLock.withLockUnchecked({ $0.liveGeneration == generation })
+                else { throw CancellationError() }
                 let config = StreamConfiguration(
                     videoCodec: .raw, resolution: resolution, frameRate: 24
                 )
@@ -248,8 +258,13 @@ final class HermesCameraManager: @unchecked Sendable {
         debug("lens: live stream created, state=\(stream.state)")
 
         let frameToken = stream.videoFramePublisher.listen { [weak self] frame in
-            self?.stateLock.withLockUnchecked { $0.latestLiveFrame = frame }
-            onVideoFrame(frame)
+            guard let self else { return }
+            let current = self.stateLock.withLockUnchecked { state in
+                guard state.liveGeneration == generation else { return false }
+                state.latestLiveFrame = frame
+                return true
+            }
+            if current { onVideoFrame(frame) }
         }
         let errorToken = stream.errorPublisher.listen { [weak self] streamError in
             self?.debug("lens: ERROR → \(streamError)")
@@ -259,27 +274,49 @@ final class HermesCameraManager: @unchecked Sendable {
             self?.debug("lens: state → \(state)")
         }
 
-        stateLock.withLockUnchecked { state in
+        let installed = stateLock.withLockUnchecked { state in
+            guard state.liveGeneration == generation else { return false }
             state.liveStream = stream
             state.liveTokens = [frameToken, errorToken, stateToken]
+            return true
+        }
+        guard installed else {
+            stream.stop()
+            for token in [frameToken, errorToken, stateToken] { await token.cancel() }
+            throw CancellationError()
         }
 
         do {
+            try Task.checkCancellation()
+            if stream.state != .streaming { stream.start() }
+            // SDK calls stay outside the lock: callbacks may run synchronously.
+            guard stateLock.withLockUnchecked({ $0.liveGeneration == generation }) else {
+                stream.stop()
+                throw CancellationError()
+            }
             if stream.state != .streaming {
-                stream.start()
                 try await waitForStreaming(stream, timeout: 10.0)
             }
         } catch {
-            stopLiveStream()
+            stopLiveStream(ifGeneration: generation)
             throw error
         }
+        guard stateLock.withLockUnchecked({ $0.liveGeneration == generation })
+        else { throw CancellationError() }
         debug("lens: live stream running")
     }
 
     /// Tear down the live stream. Safe to call when no stream is running.
     func stopLiveStream() {
+        stopLiveStream(ifGeneration: nil)
+    }
+
+    private func stopLiveStream(ifGeneration expected: Int?) {
         let (stream, tokens): (MWDATCamera.Stream?, [AnyListenerToken]) =
             stateLock.withLockUnchecked { state in
+                if let expected, state.liveGeneration != expected { return (nil, []) }
+                state.liveGeneration &+= 1
+                state.liveStarting = false
                 let out = (state.liveStream, state.liveTokens)
                 state.liveStream = nil
                 state.liveTokens = []

@@ -60,3 +60,9 @@ The reference installed app passed wearer-confirmed glasses microphone/speaker a
 Connection diagnostics show a sanitized endpoint, transport event, pending-request status, first-text timing, and the reason automatic recovery was skipped. Recovery makes one attempt after a two-second delay only when listening, no request is pending, and recording is inactive. It never resends an interrupted query. Start resets the retry allowance. The reconnecting notice is informational.
 
 Run `bash tests/bridge-recovery/run.sh` from `app/` for controlled transport checks, including a 65-second reply, invalid welcome, cancellation before a delayed welcome, redaction, and single delivery on interruption. `--short` skips the long response case. The fixture uses local port 19876 and requires the bridge virtual environment. This does not simulate physical Bluetooth or iOS background suspension.
+
+## Lens repair — 2026-11-03
+
+A reported Lens `videoStreamingError` exposed an asynchronous failure path that left the failed stream allocated. The repair releases it, clears the stale preview, retries that error once, and uses low-resolution live streaming. Generation checks protect against stale callbacks and late startup cleanup after Stop or replacement. Permission and thermal errors are not automatically retried.
+
+Signed reference-device build/install/launch and focused independent static review passed. With iPhone cameras covered, the wearer confirmed the glasses preview followed their view for 30 seconds without the error. This validates the repaired path in that test; it does not identify the underlying SDK/hardware cause or establish long-duration video reliability. Fault-injected recovery and Stop-during-start hardware tests remain unverified.

@@ -90,6 +90,9 @@ final class LensViewModel {
     @ObservationIgnored private var logImages: [String: UIImage] = [:]
     @ObservationIgnored private var sessionStart = Date()
     @ObservationIgnored private var didStop = false
+    @ObservationIgnored private var streamGeneration = 0
+    @ObservationIgnored private var streamRecoveryUsed = false
+    @ObservationIgnored private var streamRecoveryTask: Task<Void, Never>?
 
     init(hermesVM: HermesSessionViewModel) {
         self.hermesVM = hermesVM
@@ -165,6 +168,9 @@ final class LensViewModel {
     /// and detector are already set up by `start()`; used both on first open
     /// and when resuming after the History sheet paused it.
     private func beginStream() async {
+        guard !didStop, !Task.isCancelled else { return }
+        streamGeneration &+= 1
+        let generation = streamGeneration
         // Phone mode with a live session: the camera is already streaming for
         // the 5b feed, and iOS gives one AVCaptureSession per camera. Attach
         // to those frames rather than fighting for the device.
@@ -190,21 +196,27 @@ final class LensViewModel {
                 onFrame: { [weak self] frame in
                     // Capture thread - hop to main before touching state.
                     Task { @MainActor [weak self] in
-                        self?.handle(
-                            image: frame.image, pixelBuffer: frame.pixelBuffer
-                        )
+                        guard let self, !self.didStop,
+                              self.streamGeneration == generation else { return }
+                        self.handle(image: frame.image, pixelBuffer: frame.pixelBuffer)
                     }
                 },
                 onError: { [weak self] message in
                     Task { @MainActor [weak self] in
-                        self?.errorBanner = "Camera stream error: \(message)"
-                        self?.isStreaming = false
+                        guard let self, !self.didStop,
+                              self.streamGeneration == generation else { return }
+                        self.handleStreamFailure(message)
                     }
                 }
             )
+            guard !didStop, !Task.isCancelled,
+                  streamGeneration == generation else { return }
             isStreaming = true
+            errorBanner = nil
             statusText = "Point the center at an object"
         } catch {
+            guard !didStop, !Task.isCancelled,
+                  streamGeneration == generation else { return }
             NSLog("[Hermes] lens: \(hermesVM.visionRoute) stream failed - \(error.localizedDescription)")
             hermesVM.logVisionDiagnostics("lens-stream-failed")
 
@@ -231,9 +243,35 @@ final class LensViewModel {
         }
     }
 
+    /// Release a failed stream before one bounded retry. Never restart after
+    /// the user leaves Lens or opens History, and never retry permission/thermal errors.
+    private func handleStreamFailure(_ message: String) {
+        endStream()
+        isStreaming = false
+        feedImage = nil
+        detections = []
+        guard hermesVM.visionRoute == .glasses,
+              message == "videoStreamingError", !streamRecoveryUsed else {
+            errorBanner = "Camera stream error: \(message)"
+            statusText = "Camera stopped. Close and reopen Lens to retry."
+            return
+        }
+        streamRecoveryUsed = true
+        errorBanner = nil
+        statusText = "Reconnecting glasses camera…"
+        streamRecoveryTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(nanoseconds: 1_000_000_000) } catch { return }
+            guard let self, !self.didStop, !Task.isCancelled else { return }
+            await self.beginStream()
+            if !Task.isCancelled { self.streamRecoveryTask = nil }
+        }
+    }
+
     /// Second attempt, on the phone. Separate from `beginStream()` so a
     /// failure here reports honestly instead of recursing.
     private func beginPhoneStream() async {
+        guard !didStop, !Task.isCancelled else { return }
+        let generation = streamGeneration
         if sharesSessionStream {
             hermesVM.addVisionFrameObserver(Self.observerKey) { [weak self] frame in
                 MainActor.assumeIsolated {
@@ -253,21 +291,30 @@ final class LensViewModel {
             try await vision.startLiveStream(
                 onFrame: { [weak self] frame in
                     Task { @MainActor [weak self] in
-                        self?.handle(
+                        guard let self, !self.didStop,
+                              self.streamGeneration == generation else { return }
+                        self.handle(
                             image: frame.image, pixelBuffer: frame.pixelBuffer
                         )
                     }
                 },
                 onError: { [weak self] message in
                     Task { @MainActor [weak self] in
-                        self?.errorBanner = "Camera stream error: \(message)"
-                        self?.isStreaming = false
+                        guard let self, !self.didStop,
+                              self.streamGeneration == generation else { return }
+                        self.errorBanner = "Camera stream error: \(message)"
+                        self.isStreaming = false
                     }
                 }
             )
+            guard !didStop, !Task.isCancelled,
+                  streamGeneration == generation else { return }
             isStreaming = true
             statusText = "Point the center at an object"
         } catch {
+            guard !didStop, !Task.isCancelled,
+                  streamGeneration == generation else { return }
+
             NSLog("[Hermes] lens: iPhone fallback also failed - \(error.localizedDescription)")
             errorBanner = error.localizedDescription
             statusText = "Camera unavailable"
@@ -278,7 +325,6 @@ final class LensViewModel {
     /// but keep the session, log, and camera-session alive. Flushes the
     /// in-progress look so its time is recorded and the dwell resets clean.
     func pauseStreaming() {
-        guard isStreaming else { return }
         endStream()
         isStreaming = false
         statusText = "Paused"
@@ -306,6 +352,9 @@ final class LensViewModel {
     /// Stop whichever kind of stream this view is using: detach from the
     /// session's fan-out, or tear down the capture it started itself.
     private func endStream() {
+        streamGeneration &+= 1
+        streamRecoveryTask?.cancel()
+        streamRecoveryTask = nil
         if sharesSessionStream {
             hermesVM.removeVisionFrameObserver(Self.observerKey)
         } else {
