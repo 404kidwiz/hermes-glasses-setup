@@ -98,3 +98,5 @@ Status-sound follow-up: wearer confirmed manual test tone and automatic processi
 ![Lens recovery panel — simulated camera failure, voice inactive](gui-audit/lens-recovery.png)
 
 Reference iPhone installation and launch passed. Sanitized handoff unsigned build and secret scan passed. Physical acceptance of this Lens update is pending.
+
+- Physical acceptance follow-up: wearer confirmed Lens preview works and voice replies still work after closing Lens with Done. Normal preview/voice continuity passes by user report. No camera failure occurred in this check; Retry camera after a real failure remains unverified.
