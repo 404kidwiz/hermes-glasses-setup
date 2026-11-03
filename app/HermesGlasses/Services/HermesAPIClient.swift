@@ -11,6 +11,44 @@ import os
 
 /// WebSocket-based client for Hermes Agent voice API
 final class HermesAPIClient: NSObject {
+    // A reconnect restores transport only. An uncertain request is never replayed.
+    static func mayReconnect(isListening: Bool, requestPending: Bool) -> Bool {
+        isListening && !requestPending
+    }
+
+    static func safeEndpoint(_ endpoint: String) -> String {
+        guard let url = URL(string: endpoint), let host = url.host else { return "invalid endpoint" }
+        return host + (url.port.map { ":\($0)" } ?? "")
+    }
+
+    static func isWelcome(_ message: URLSessionWebSocketTask.Message) -> Bool {
+        guard case .string(let text) = message, let data = text.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return false }
+        return object["type"] as? String == "welcome"
+    }
+
+    private struct Telemetry {
+        var pending = false
+        var sentAt: Date?
+        var firstText: TimeInterval?
+        var event = "Not connected"
+    }
+    private let telemetry = OSAllocatedUnfairLock(initialState: Telemetry())
+    var hasPendingRequest: Bool { telemetry.withLock { $0.pending } }
+    var diagnosticSummary: String {
+        telemetry.withLock { t in
+            let timing = t.firstText.map { String(format: " · first text %.1fs", $0) } ?? ""
+            return "\(Self.safeEndpoint(endpoint)) · \(t.event) · \(t.pending ? "request pending" : "idle")\(timing)"
+        }
+    }
+    var onDiagnostics: ((String) -> Void)?
+    private func diagnose(_ event: String) {
+        telemetry.withLock { $0.event = event }
+        let summary = diagnosticSummary
+        Task { @MainActor [weak self] in self?.onDiagnostics?(summary) }
+    }
+
     // MARK: - Callbacks
 
     var onTranscript: ((String) -> Void)?
@@ -67,10 +105,11 @@ final class HermesAPIClient: NSObject {
     @discardableResult
     func connect() async -> Bool {
         guard let url = URL(string: endpoint) else {
-            await reportError("Invalid Hermes endpoint URL: \(endpoint)")
+            await reportError("Invalid Hermes endpoint URL")
             return false
         }
 
+        diagnose("Connecting")
         let config = URLSessionConfiguration.default
         // Agent tool turns can be silent longer than a normal HTTP request.
         // Match the bridge turn budget with margin rather than cutting off at 10s.
@@ -86,7 +125,10 @@ final class HermesAPIClient: NSObject {
         do {
             // The bridge sends {"type":"welcome"} immediately on connect
             let first = try await ws.receive()
+            guard Self.isWelcome(first) else { throw URLError(.badServerResponse) }
+            guard webSocket === ws, !Task.isCancelled else { return false }
             setConnected(true)
+            diagnose("Connected")
             await handleMessage(first)
 
             receiveTask = Task { [weak self] in
@@ -94,7 +136,8 @@ final class HermesAPIClient: NSObject {
             }
             return true
         } catch {
-            await reportError("Failed to connect to Hermes: \(error.localizedDescription)")
+            diagnose("Connect failed (\((error as NSError).domain) \((error as NSError).code))")
+            await reportError(diagnosticSummary)
             disconnect()
             return false
         }
@@ -150,10 +193,17 @@ final class HermesAPIClient: NSObject {
                                       "tts": bridgeTTS]
         guard let data = try? JSONSerialization.data(withJSONObject: payload),
               let json = String(data: data, encoding: .utf8) else { return }
+        telemetry.withLock { t in
+            t.pending = true
+            t.sentAt = Date()
+            t.firstText = nil
+        }
+        diagnose("Waiting for reply")
         ws.send(.string(json)) { [weak self] error in
             if let error {
                 Task { @MainActor in
-                    self?.onError?("Query send error: \(error.localizedDescription)")
+                    self?.diagnose("Send failed (\((error as NSError).code)); outcome unknown")
+                    self?.onError?("Request delivery is uncertain. Check the action before retrying.")
                 }
             }
         }
@@ -215,7 +265,7 @@ final class HermesAPIClient: NSObject {
             } catch {
                 setConnected(false)
                 if !Task.isCancelled {
-                    await reportError("Connection lost: \(error.localizedDescription)")
+                    diagnose("Disconnected (\((error as NSError).domain) \((error as NSError).code), close \(ws.closeCode.rawValue))")
                     await MainActor.run { [weak self] in
                         self?.onDisconnected?()
                     }
@@ -253,6 +303,8 @@ final class HermesAPIClient: NSObject {
                     self?.onTranscript?(transcript)
                 }
             case "response":
+                self?.telemetry.withLock { $0.pending = false }
+                self?.diagnose("Reply received")
                 if let response = json["text"] as? String {
                     // Absent "tts" field = old bridge that always streams
                     // audio afterwards
@@ -261,6 +313,10 @@ final class HermesAPIClient: NSObject {
                     self?.onResponse?(response, bridgeAudio, streamed)
                 }
             case "response_delta":
+                self?.telemetry.withLock { t in
+                    if t.firstText == nil, let sent = t.sentAt { t.firstText = Date().timeIntervalSince(sent) }
+                }
+                self?.diagnose("Receiving reply")
                 if let chunk = json["text"] as? String, !chunk.isEmpty {
                     self?.onResponseDelta?(chunk)
                 }

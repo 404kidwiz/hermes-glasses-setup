@@ -90,6 +90,10 @@ final class HermesSessionViewModel {
     var connectionState: HermesConnectionState = .disconnected
     var isGlassesConnected: Bool = false
     var bridgeStatus: BridgeStatus = .unknown
+    var bridgeDiagnostics = "No bridge session yet"
+    @ObservationIgnored private var idleReconnectTask: Task<Void, Never>?
+    @ObservationIgnored private var recoveryAttemptUsed = false
+    @ObservationIgnored private var sessionEpoch = 0
     /// Words recognized so far in the current utterance (live)
     var liveTranscript: String = ""
     /// Mic input level 0..~1 for the UI meter
@@ -652,11 +656,16 @@ final class HermesSessionViewModel {
     }
 
     func startSession() async {
+        idleReconnectTask?.cancel()
+        idleReconnectTask = nil
+        recoveryAttemptUsed = false
         recordingOnlySession = false
         await startSession(engagingBrain: true)
     }
 
     private func startSession(engagingBrain: Bool) async {
+        sessionEpoch &+= 1
+        let epoch = sessionEpoch
         // The voice session owns the glasses from here on - a Lens-created
         // camera session must not compete with it. (UI-wise Lens can't be
         // open when this button is reachable; this is belt-and-braces.)
@@ -667,7 +676,9 @@ final class HermesSessionViewModel {
         logVisionDiagnostics("startSession")
         var route = visionRoute
 
-        if route == .glasses, await connectGlassesSession() == false {
+        let glassesConnected = route == .glasses ? await connectGlassesSession() : true
+        guard sessionEpoch == epoch, !Task.isCancelled else { return }
+        if !glassesConnected {
             // Eligibility can lapse between the check and the start, and the
             // SDK is the only one who knows. Rather than leaving the user at
             // "No eligible device available" with no way forward, drop to the
@@ -687,6 +698,7 @@ final class HermesSessionViewModel {
             // No DeviceSession, no display attach - the phone is the eye and
             // the lens is simulated on screen (design 5b).
             await startPhoneVision()
+            guard sessionEpoch == epoch, !Task.isCancelled else { return }
         }
 
         // Personal context (time/location/motion/battery/weather) -
@@ -710,8 +722,9 @@ final class HermesSessionViewModel {
             apiClient = client
 
             let connected = await client.connect()
+            guard sessionEpoch == epoch, !Task.isCancelled, apiClient === client else { return }
             guard connected else {
-                show("Failed to connect to Hermes bridge at \(hermesEndpoint)")
+                show("Failed to connect: \(client.diagnosticSummary)")
                 endSession()
                 return
             }
@@ -719,16 +732,43 @@ final class HermesSessionViewModel {
             // Wired only once the socket is up. `connect()` calls
             // `disconnect()` on its own failure path, and the guard above
             // already reports that - wiring earlier would report it twice.
-            client.onDisconnected = { [weak self] in
-                Task { @MainActor [weak self] in
-                    guard let self, self.connectionState != .disconnected else { return }
-                    // Without this the UI sat on "Listening" forever while
-                    // every utterance was dropped at submitQuery's
-                    // isConnected guard - silence indistinguishable from
-                    // Hermes having nothing to say.
-                    self.liveTranscript = ""
+            client.onDisconnected = { [weak self, weak client] in
+                Task { @MainActor [weak self, weak client] in
+                    guard let self, let client, self.apiClient === client,
+                          self.connectionState != .disconnected else { return }
+                    let idle = HermesAPIClient.mayReconnect(
+                        isListening: self.connectionState == .listening,
+                        requestPending: client.hasPendingRequest)
+                    let retry = idle && !self.recoveryAttemptUsed && !self.conversationCaptureActive
+                    // Snapshot eligibility before teardown resets the session state.
+                    let recoveryReason: String
+                    if client.hasPendingRequest {
+                        recoveryReason = "An interrupted request may still be running. Check its outcome before retrying."
+                    } else if self.conversationCaptureActive {
+                        recoveryReason = "Recording was active; automatic restart was skipped."
+                    } else if self.recoveryAttemptUsed {
+                        recoveryReason = "The automatic reconnect attempt was already used."
+                    } else {
+                        recoveryReason = "The session was not idle (\(self.connectionState))."
+                    }
+                    let recoveryDetail = retry ? "idle reconnect scheduled" : recoveryReason
+                    self.bridgeDiagnostics = client.diagnosticSummary + " · " + recoveryDetail
                     self.endSession()
-                    self.show("Lost the connection to the Hermes bridge. Start listening again to reconnect.")
+                    if retry {
+                        self.recoveryAttemptUsed = true
+                        self.show(notice: "Connection lost while idle. Reconnecting once; no request will be repeated.")
+                        self.idleReconnectTask = Task { @MainActor [weak self] in
+                            do { try await Task.sleep(nanoseconds: 2_000_000_000) } catch { return }
+                            guard let self, !Task.isCancelled,
+                                  self.connectionState == .disconnected else { return }
+                            // Keep the task cancellable throughout startup.
+                            // Use the private entrypoint so the retry budget is not reset.
+                            await self.startSession(engagingBrain: true)
+                            if !Task.isCancelled { self.idleReconnectTask = nil }
+                        }
+                    } else {
+                        self.show("Connection lost. \(recoveryReason) Start listening to reconnect.")
+                    }
                 }
             }
         }
@@ -737,6 +777,7 @@ final class HermesSessionViewModel {
         // Audio is transcribed ON the phone; only final text goes to the
         // bridge. No mic audio is streamed over WiFi anymore.
         let speechOK = await speechRecognizer.requestAuthorization()
+        guard sessionEpoch == epoch, !Task.isCancelled else { return }
         if !speechOK {
             show(HermesSpeechError.notAuthorized.localizedDescription)
         }
@@ -806,6 +847,10 @@ final class HermesSessionViewModel {
             let bluetoothActive = try await audioManager.startCapture(
                 route: micSource.captureRoute
             )
+            guard sessionEpoch == epoch, !Task.isCancelled else {
+                if connectionState == .disconnected { audioManager.stopCapture() }
+                return
+            }
             if micSource == .glasses && !bluetoothActive {
                 show(notice: Self.glassesMicFallbackNotice)
             }
@@ -816,6 +861,7 @@ final class HermesSessionViewModel {
                 try speechRecognizer.start()
             }
         } catch {
+            guard sessionEpoch == epoch, !Task.isCancelled else { return }
             show("Audio setup failed: \(error.localizedDescription)")
             endSession()
             return
@@ -842,16 +888,23 @@ final class HermesSessionViewModel {
     /// sequence of steps it is. Returns the client ready to `connect()`.
     private func makeBridgeClient() -> HermesAPIClient {
         let client = HermesAPIClient(endpoint: hermesEndpoint)
-
-        client.onTranscript = { [weak self] text in
-            Task { @MainActor [weak self] in
-                self?.lastTranscript = text
-                self?.connectionState = .processing
+        client.onDiagnostics = { [weak self, weak client] summary in
+            Task { @MainActor [weak self, weak client] in
+                guard let self, let client, self.apiClient === client else { return }
+                self.bridgeDiagnostics = summary
             }
         }
-        client.onResponse = { [weak self] text, bridgeWillSendAudio, streamed in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
+
+        client.onTranscript = { [weak self, weak client] text in
+            Task { @MainActor [weak self, weak client] in
+                guard let self, let client, self.apiClient === client else { return }
+                self.lastTranscript = text
+                self.connectionState = .processing
+            }
+        }
+        client.onResponse = { [weak self, weak client] text, bridgeWillSendAudio, streamed in
+            Task { @MainActor [weak self, weak client] in
+                guard let self, let client, self.apiClient === client else { return }
                 self.lastResponse = text
                 self.addTurn(
                     userText: self.lastTranscript,
@@ -878,9 +931,9 @@ final class HermesSessionViewModel {
                 }
             }
         }
-        client.onResponseDelta = { [weak self] chunk in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
+        client.onResponseDelta = { [weak self, weak client] chunk in
+            Task { @MainActor [weak self, weak client] in
+                guard let self, let client, self.apiClient === client else { return }
                 let first = !self.streamedThisTurn
                 self.streamedThisTurn = true
                 if self.lastResponse.isEmpty {
@@ -908,9 +961,9 @@ final class HermesSessionViewModel {
         }
         // With bridge TTS the ack is just the first audio clip; only the
         // on-device voice path has to speak it here.
-        client.onAck = { [weak self] ack in
-            Task { @MainActor [weak self] in
-                guard let self, self.lastResponse.isEmpty else { return }
+        client.onAck = { [weak self, weak client] ack in
+            Task { @MainActor [weak self, weak client] in
+                guard let self, let client, self.apiClient === client, self.lastResponse.isEmpty else { return }
                 self.ackThisTurn = true
                 guard self.useDeviceTTS, !self.displaySilentActive,
                       !self.streamedThisTurn
@@ -919,9 +972,9 @@ final class HermesSessionViewModel {
                 self.speechSynthesizer.speak(ack)
             }
         }
-        client.onAudioStreamStart = { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
+        client.onAudioStreamStart = { [weak self, weak client] in
+            Task { @MainActor [weak self, weak client] in
+                guard let self, let client, self.apiClient === client else { return }
                 self.audioManager.beginClipStream()
                 guard self.replyAudioLive else { return }
                 self.connectionState = .speaking
@@ -930,9 +983,9 @@ final class HermesSessionViewModel {
                 }
             }
         }
-        client.onAudioResponse = { [weak self] audioData in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
+        client.onAudioResponse = { [weak self, weak client] audioData in
+            Task { @MainActor [weak self, weak client] in
+                guard let self, let client, self.apiClient === client else { return }
                 self.audioManager.enqueueClip(audioData)
                 guard self.replyAudioLive else { return }
                 self.connectionState = .speaking
@@ -941,9 +994,9 @@ final class HermesSessionViewModel {
                 }
             }
         }
-        client.onAudioStreamEnd = { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
+        client.onAudioStreamEnd = { [weak self, weak client] in
+            Task { @MainActor [weak self, weak client] in
+                guard let self, let client, self.apiClient === client else { return }
                 // audio_end is always a turn's last frame. Still .processing
                 // here means no reply audio played (only the ack's clip, or
                 // TTS failed): let playback completion take it to listening
@@ -955,19 +1008,21 @@ final class HermesSessionViewModel {
             }
         }
         // Fires only when the bridge sent no TTS audio at all
-        client.onPlaybackComplete = { [weak self] in
-            Task { @MainActor [weak self] in
-                await self?.finishSpeaking()
+        client.onPlaybackComplete = { [weak self, weak client] in
+            Task { @MainActor [weak self, weak client] in
+                guard let self, let client, self.apiClient === client else { return }
+                await self.finishSpeaking()
             }
         }
-        client.onError = { [weak self] error in
-            Task { @MainActor [weak self] in
-                self?.show(error)
+        client.onError = { [weak self, weak client] error in
+            Task { @MainActor [weak self, weak client] in
+                guard let self, let client, self.apiClient === client else { return }
+                self.show(error)
             }
         }
-        client.onSessionReset = { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
+        client.onSessionReset = { [weak self, weak client] in
+            Task { @MainActor [weak self, weak client] in
+                guard let self, let client, self.apiClient === client else { return }
                 self.conversationHistory.removeAll()
                 self.lastTranscript = ""
                 self.lastResponse = ""
@@ -975,14 +1030,16 @@ final class HermesSessionViewModel {
                 self.displayManager.showNewConversationFlash()
             }
         }
-        client.onCapturePhotoRequested = { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
+        client.onCapturePhotoRequested = { [weak self, weak client] in
+            Task { @MainActor [weak self, weak client] in
+                guard let self, let client, self.apiClient === client else { return }
                 // Fail fast if the camera permission is missing - the
                 // interactive grant needs an app switch, which can't happen
                 // inside the bridge's photo wait.
-                guard await self.ensureVisionPermission(interactive: false) else {
-                    self.apiClient?.sendPhotoError(
+                let permitted = await self.ensureVisionPermission(interactive: false)
+                guard self.apiClient === client else { return }
+                guard permitted else {
+                    client.sendPhotoError(
                         self.visionRoute == .phone
                             ? "Camera access is off for Hermes. Turn it on in iOS Settings."
                             : "Camera permission not granted. Tap the Photo test button to grant access via Meta AI."
@@ -992,10 +1049,11 @@ final class HermesSessionViewModel {
                 do {
                     self.displayManager.showPhotoCaptured()
                     let photo = try await self.captureVisionPhoto()
+                    guard self.apiClient === client else { return }
                     self.pendingPhoto = photo
-                    self.apiClient?.sendPhoto(photo)
+                    client.sendPhoto(photo)
                 } catch {
-                    self.apiClient?.sendPhotoError(error.localizedDescription)
+                    client.sendPhotoError(error.localizedDescription)
                 }
             }
         }
@@ -2263,6 +2321,9 @@ final class HermesSessionViewModel {
     }
 
     func endSession() {
+        sessionEpoch &+= 1
+        idleReconnectTask?.cancel()
+        idleReconnectTask = nil
         // Unlike a half-finished "remember this person", a running
         // conversation capture is saved, not discarded - an hour of notes
         // must not vanish because the session dropped. Silent: the audio
@@ -2457,7 +2518,7 @@ final class HermesSessionViewModel {
             probe.disconnect()
             if !ok {
                 let detail = underlying.isEmpty ? "no welcome received" : underlying
-                throw TestFailure("\(hermesEndpoint): \(detail)")
+                throw TestFailure("\(HermesAPIClient.safeEndpoint(hermesEndpoint)): \(detail)")
             }
             bridgeStatus = .reachable
         }

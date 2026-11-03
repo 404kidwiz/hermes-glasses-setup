@@ -1,6 +1,6 @@
 # Improvements ranked by value
 
-These are proposals, not claims of implemented features.
+Status: sanitized transport diagnostics and one-attempt idle recovery are implemented. Reference glasses audio/camera, idle handover, 10-minute foreground use and 2-minute locked-phone use passed wearer testing. Broader items below remain proposals; see VERIFICATION.md for limits.
 
 1. **Connection and latency diagnostics.** Show selected route, VPN reachability, last error, model/tool status and time to first text/audio. Use redacted metrics rather than full conversation logging. This reduces guesswork when a long tool request looks like broken Wi-Fi.
 2. **Fast / Full / Council modes.** Let the user choose low-latency everyday answers, full tool work, or explicit multi-agent analysis. Validate each route, make the active mode visible, and do not silently downgrade capability or exceed a budget.

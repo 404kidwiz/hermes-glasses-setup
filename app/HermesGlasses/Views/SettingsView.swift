@@ -1139,6 +1139,13 @@ private struct DeveloperPage: View {
                 }
                 HermesDivider()
                 HermesRow("Bridge", value: bridgeText, showsChevron: false)
+                Text(hermesVM.bridgeDiagnostics)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                    .textSelection(.enabled)
                 HermesDivider()
                 HermesRow("Glasses display", value: displayText, showsChevron: false)
                 HermesDivider()

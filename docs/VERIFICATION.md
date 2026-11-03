@@ -29,11 +29,12 @@ The upstream `scripts/smoke-bridge.py` makes real paid model/tool calls and asks
 | Cellular | Wi-Fi off, Tailscale on | Completed answer | Passed by user |
 | Tool request | Harmless current-information lookup | Tool activity and completed reply | Bridge smoke passed; factual answer accuracy separately assessed |
 | Synthetic vision | Send known nonpersonal image | Image path exercised, relevant answer | Bridge smoke passed |
-| Actual glasses camera | Ask about a known object while wearing glasses | Actual glasses capture and correct description | Pending fresh hardware acceptance |
-| Glasses audio | Phone away, selected glasses microphone/speakers | Speech captured and reply heard through glasses | Pending fresh hardware acceptance |
+| Actual glasses camera | Ask about a known object while wearing glasses | Actual glasses capture and correct description | Passed by reference wearer on 2026-11-02 with iPhone cameras covered |
+| Glasses audio | Phone away, selected glasses microphone/speakers | Speech captured and reply heard through glasses | Passed by reference wearer on 2026-11-02 with iPhone about 10 feet away |
 | Long tool turn | A task taking more than 10s | No premature disconnection, completion | Timeout mitigation installed; systematic acceptance pending |
-| Wi-Fi/cellular handover | Switch networks between turns, then during a harmless turn | Document recovery/no duplicate action | Pending |
-| Locked/background phone | Test intended real usage with screen locked | Record actual behavior; do not assume indefinite iOS background execution | Pending |
+| Wi-Fi/cellular handover | Switch networks between turns, then during a harmless turn | Document recovery/no duplicate action | Initial reference test required Start; fresh idle retest on 2026-11-02 automatically reconnected by wearer confirmation. Spoken reply after recovery and in-flight handover remain unverified |
+| Sustained foreground session | Keep screen awake; ask at minutes 0, 5 and 10 | All replies through glasses without Start/restart | Passed by reference wearer on 2026-11-02; does not establish locked-screen or longer endurance |
+| Locked/background phone | Test intended real usage with screen locked | Record actual behavior; do not assume indefinite iOS background execution | Passed by reference wearer on 2026-11-03 after 2 minutes locked; longer background use untested |
 | Restart recovery | Restart bridge/gateway and reboot Mac after saving work | Services return after login; phone reconnects | Pending for clean colleague install |
 | Renewal | Force one renewal with unlocked phone | New profile installed, expiry recorded, app launches | Passed on reference device |
 | Council | Validate advisors then real fan-out | Both advisors and synthesis evidenced | Separate Hermes test passed; glasses-specific test pending |
@@ -51,3 +52,11 @@ Create a private record with: operator, date, app/Hermes/SDK versions, sanitized
 ## Public snapshot publication checks
 
 The included sanitized snapshot passed a clean unsigned generic-iOS build (signing is intentionally left to the receiving user), 71 bridge tests and 25 Swift endpoint/preferences assertions. The paired map-token test fixture was made explicitly synthetic and its tests rerun. Shell syntax, documentation relative links, archival patch application against the original local baseline, known-private-value scanning and staged Gitleaks scanning passed. No provider authentication or live physical-device acceptance was performed with a colleague's accounts. The signed installed reference app was tested separately before sanitization.
+
+## Recovery update acceptance
+
+The reference installed app passed wearer-confirmed glasses microphone/speaker and camera tests, a fresh idle Wi-Fi-to-cellular automatic reconnect, a 10-minute screen-awake session with replies at minutes 0/5/10, and a reply after 2 minutes with the phone locked. Initial handover required manual Start; the fresh-session retest recovered automatically. These are bounded user-reported checks, not an all-day endurance guarantee.
+
+Connection diagnostics show a sanitized endpoint, transport event, pending-request status, first-text timing, and the reason automatic recovery was skipped. Recovery makes one attempt after a two-second delay only when listening, no request is pending, and recording is inactive. It never resends an interrupted query. Start resets the retry allowance. The reconnecting notice is informational.
+
+Run `bash tests/bridge-recovery/run.sh` from `app/` for controlled transport checks, including a 65-second reply, invalid welcome, cancellation before a delayed welcome, redaction, and single delivery on interruption. `--short` skips the long response case. The fixture uses local port 19876 and requires the bridge virtual environment. This does not simulate physical Bluetooth or iOS background suspension.
