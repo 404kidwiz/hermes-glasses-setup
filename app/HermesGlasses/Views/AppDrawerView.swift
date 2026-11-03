@@ -33,7 +33,7 @@ struct AppDrawerView: View {
                     }
                 }
             }
-            .navigationTitle("Apps")
+            .navigationTitle("Tools")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(HermesTheme.groupedCanvas, for: .navigationBar)
             .toolbar {
@@ -59,7 +59,7 @@ struct AppDrawerView: View {
                 VStack(alignment: .leading, spacing: 5) {
                     HStack(spacing: 8) {
                         Text(app.title)
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.headline)
                             .foregroundStyle(.primary)
                         if app.isVoiceLaunchable {
                             HermesBadge(text: "Voice", prominent: true)
@@ -67,7 +67,7 @@ struct AppDrawerView: View {
                     }
 
                     Text(blockedReason ?? app.summary)
-                        .font(.system(size: 13))
+                        .font(.footnote)
                         .foregroundStyle(blockedReason == nil
                             ? AnyShapeStyle(Color.secondary)
                             : AnyShapeStyle(HermesTheme.accentOnCard))
@@ -88,7 +88,6 @@ struct AppDrawerView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
             .contentShape(Rectangle())
-            .opacity(blockedReason == nil ? 1 : 0.55)
         }
         .buttonStyle(.plain)
         .disabled(blockedReason != nil)

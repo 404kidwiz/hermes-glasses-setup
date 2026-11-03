@@ -17,6 +17,7 @@ struct PeopleView: View {
     let hermesVM: HermesSessionViewModel
 
     @Environment(\.dismiss) private var dismiss
+    @State private var pendingDeletion: Encounter?
 
     private var days: [(date: Date, label: String, encounters: [Encounter])] {
         // Read the revision so @Observable tracks it: allEncounters() reads
@@ -74,7 +75,7 @@ struct PeopleView: View {
                                     .buttonStyle(.plain)
                                     .contextMenu {
                                         Button("Delete", role: .destructive) {
-                                            hermesVM.deleteEncounter(id: encounter.id)
+                                            pendingDeletion = encounter
                                         }
                                     }
                                 }
@@ -94,6 +95,18 @@ struct PeopleView: View {
             }
         }
         .tint(HermesTheme.accent)
+        .confirmationDialog("Delete saved person?", isPresented: Binding(
+            get: { pendingDeletion != nil },
+            set: { if !$0 { pendingDeletion = nil } }
+        ), titleVisibility: .visible, presenting: pendingDeletion) { encounter in
+            Button("Delete saved entry", role: .destructive) {
+                hermesVM.deleteEncounter(id: encounter.id)
+                pendingDeletion = nil
+            }
+            Button("Cancel", role: .cancel) { pendingDeletion = nil }
+        } message: { encounter in
+            Text("Delete the entry from \(encounter.timestamp.formatted(date: .abbreviated, time: .shortened))? Its saved photos and notes will be removed. This cannot be undone.")
+        }
     }
 
     private var emptyState: some View {
@@ -207,6 +220,8 @@ private struct EncounterDetailView: View {
     let encounter: Encounter
 
     @State private var note: String = ""
+    @State private var confirmingDeletion = false
+    @State private var wasDeleted = false
     @Environment(\.dismiss) private var dismiss
 
     private var timeline: EncounterTimeline { EncounterTimeline.build(encounter) }
@@ -221,6 +236,17 @@ private struct EncounterDetailView: View {
         .navigationTitle(timeline.kind == .conversation ? "Conversation" : "Person")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(HermesTheme.groupedCanvas, for: .navigationBar)
+        .confirmationDialog("Delete saved entry?", isPresented: $confirmingDeletion,
+                            titleVisibility: .visible) {
+            Button("Delete saved entry", role: .destructive) {
+                wasDeleted = true
+                hermesVM.deleteEncounter(id: encounter.id)
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Delete the entry from \(encounter.timestamp.formatted(date: .abbreviated, time: .shortened))? Its saved photos and notes will be removed. This cannot be undone.")
+        }
     }
 
     // MARK: - Single note (a "remember this person" capture, unchanged)
@@ -252,8 +278,7 @@ private struct EncounterDetailView: View {
 
             Section {
                 Button("Delete", role: .destructive) {
-                    hermesVM.deleteEncounter(id: encounter.id)
-                    dismiss()
+                    confirmingDeletion = true
                 }
             }
         }
@@ -261,7 +286,7 @@ private struct EncounterDetailView: View {
         .onAppear { note = encounter.note }
         .onDisappear {
             // Swipe-back must not discard an edit (same contract as Settings).
-            if note != encounter.note {
+            if !wasDeleted && note != encounter.note {
                 hermesVM.updateEncounterNote(id: encounter.id, note: note)
             }
         }
@@ -313,8 +338,7 @@ private struct EncounterDetailView: View {
             }
 
             Button("Delete", role: .destructive) {
-                hermesVM.deleteEncounter(id: encounter.id)
-                dismiss()
+                confirmingDeletion = true
             }
             .font(.system(size: 15, weight: .semibold))
             .padding(.top, 4)

@@ -16,6 +16,7 @@ struct ObjectLogView: View {
     let hermesVM: HermesSessionViewModel
 
     @Environment(\.dismiss) private var dismiss
+    @State private var pendingDeletions: [LensSession] = []
 
     private var days: [(date: Date, label: String, sessions: [LensSession])] {
         // Read the revision so @Observable tracks it, instead of forcing a
@@ -58,11 +59,15 @@ struct ObjectLogView: View {
                                     } label: {
                                         sessionRow(session)
                                     }
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                        Button("Delete", role: .destructive) {
+                                            pendingDeletions = [session]
+                                        }
+                                    }
                                 }
                                 .onDelete { offsets in
-                                    for index in offsets {
-                                        hermesVM.deleteLensSession(id: day.sessions[index].id)
-                                    }
+                                    // Capture identities now; a refresh must not change the deletion target.
+                                    pendingDeletions = offsets.map { day.sessions[$0] }
                                 }
                             }
                         }
@@ -82,6 +87,24 @@ struct ObjectLogView: View {
             }
         }
         .tint(HermesTheme.accent)
+        .confirmationDialog(
+            pendingDeletions.count == 1 ? "Delete saved session?" : "Delete \(pendingDeletions.count) saved sessions?",
+            isPresented: Binding(
+                get: { !pendingDeletions.isEmpty },
+                set: { if !$0 { pendingDeletions = [] } }
+            ), titleVisibility: .visible,
+            presenting: pendingDeletions.isEmpty ? nil : pendingDeletions
+        ) { sessions in
+            Button(sessions.count == 1 ? "Delete session" : "Delete \(sessions.count) sessions", role: .destructive) {
+                for session in sessions { hermesVM.deleteLensSession(id: session.id) }
+                pendingDeletions = []
+            }
+            Button("Cancel", role: .cancel) { pendingDeletions = [] }
+        } message: { sessions in
+            Text("Delete these saved Object Log sessions: " + sessions.map {
+                $0.startedAt.formatted(date: .abbreviated, time: .shortened)
+            }.joined(separator: "; ") + "? Their object records and photos will be removed. This cannot be undone.")
+        }
     }
 
     private func sessionRow(_ session: LensSession) -> some View {
@@ -128,6 +151,7 @@ private struct LensSessionDetailView: View {
 
     @State private var shareItem: ShareItem?
     @State private var exportError: String?
+    @State private var confirmingDeletion = false
     @Environment(\.dismiss) private var dismiss
 
     /// The longest look, used to scale every attention bar.
@@ -172,8 +196,7 @@ private struct LensSessionDetailView: View {
                     exportPDF()
                 }
                 HermesDestructiveButton(title: "Delete") {
-                    hermesVM.deleteLensSession(id: session.id)
-                    dismiss()
+                    confirmingDeletion = true
                 }
             }
             .padding(.horizontal, 16)
@@ -183,6 +206,16 @@ private struct LensSessionDetailView: View {
         )
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(HermesTheme.groupedCanvas, for: .navigationBar)
+        .confirmationDialog("Delete saved session?", isPresented: $confirmingDeletion,
+                            titleVisibility: .visible) {
+            Button("Delete session", role: .destructive) {
+                hermesVM.deleteLensSession(id: session.id)
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Delete the Object Log session from \(session.startedAt.formatted(date: .abbreviated, time: .shortened))? Its object records and photos will be removed. This cannot be undone.")
+        }
         .sheet(item: $shareItem) { item in
             ShareSheet(items: [item.url])
         }

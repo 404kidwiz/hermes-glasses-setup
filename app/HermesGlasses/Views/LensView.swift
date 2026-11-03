@@ -68,9 +68,9 @@ struct LensView: View {
             VStack(alignment: .leading, spacing: 1) {
                 HermesScreenTitle(text: "LENS")
                 Text(model.hasCameraFailure ? "Camera unavailable" : (model.errorBanner ?? model.statusText))
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundStyle(model.errorBanner == nil
-                        ? HermesTheme.cream.opacity(0.5)
+                        ? HermesTheme.cream.opacity(0.7)
                         : HermesTheme.destructive)
                     .lineLimit(2)
             }
@@ -80,16 +80,16 @@ struct LensView: View {
             if model.isStreaming {
                 Text("\(model.fps) fps")
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(HermesTheme.cream.opacity(0.4))
+                    .foregroundStyle(HermesTheme.cream.opacity(0.7))
             }
 
             Button {
                 exportPDF()
             } label: {
                 Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(HermesTheme.cream)
-                    .frame(width: 30, height: 30)
+                    .frame(width: 44, height: 44)
                     .background(HermesTheme.cream.opacity(0.1), in: Circle())
             }
             .buttonStyle(.plain)
@@ -137,23 +137,23 @@ struct LensView: View {
                 VStack(spacing: 14) {
                     Image(systemName: "camera.metering.unknown")
                         .font(.system(size: 34))
-                        .foregroundStyle(HermesTheme.cream.opacity(0.4))
+                        .foregroundStyle(HermesTheme.cream.opacity(0.7))
                     Text("The glasses camera isn't allowed yet")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(HermesTheme.cream)
                     Text("Meta AI grants this separately from iOS. It only has to be done once.")
-                        .font(.system(size: 13))
-                        .foregroundStyle(HermesTheme.cream.opacity(0.55))
+                        .font(.footnote)
+                        .foregroundStyle(HermesTheme.cream.opacity(0.7))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                     Button {
                         Task { await model.grantGlassesCamera() }
                     } label: {
                         Text("Allow camera")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 20)
-                            .frame(height: 44)
+                            .frame(minHeight: 44)
                             .background(HermesTheme.accent, in: Capsule())
                     }
                     .buttonStyle(.plain)
@@ -166,8 +166,8 @@ struct LensView: View {
                             ProgressView()
                                 .tint(HermesTheme.accentLight)
                             Text(model.statusText)
-                                .font(.system(size: 13))
-                                .foregroundStyle(HermesTheme.cream.opacity(0.5))
+                                .font(.footnote)
+                                .foregroundStyle(HermesTheme.cream.opacity(0.7))
                                 .multilineTextAlignment(.center)
                         }
                     }
@@ -328,7 +328,7 @@ struct LensView: View {
                             ? "camera.fill" : "scissors")
                         Text(stage == .flash ? "Taking a photo…" : "Cropping…")
                     }
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
@@ -370,18 +370,21 @@ struct LensView: View {
     private var gazeSlider: some View {
         HStack(spacing: 12) {
             Image(systemName: "eye")
-                .font(.system(size: 13))
-                .foregroundStyle(HermesTheme.cream.opacity(0.55))
+                .font(.footnote)
+                .foregroundStyle(HermesTheme.cream.opacity(0.7))
             Slider(
                 value: $model.dwellSeconds,
                 in: LensViewModel.minDwell...LensViewModel.maxDwell,
                 step: 0.5
             )
             .tint(HermesTheme.accent)
+            .accessibilityLabel("Capture dwell time")
+            .accessibilityValue(String(format: "%.1f seconds", model.dwellSeconds))
+            .accessibilityHint("How long to look at an object before capturing it")
             Text(String(format: "gaze %.1fs", model.dwellSeconds))
-                .font(.system(size: 12, design: .monospaced))
-                .foregroundStyle(HermesTheme.cream.opacity(0.55))
-                .frame(width: 74, alignment: .trailing)
+                .font(.caption.monospaced())
+                .foregroundStyle(HermesTheme.cream.opacity(0.7))
+                .frame(minWidth: 74, alignment: .trailing)
         }
         .padding(.horizontal, 24)
         .padding(.top, 12)
@@ -403,8 +406,8 @@ struct LensView: View {
                     format: "Hold the ring on an object for %.1f seconds to snap it",
                     model.dwellSeconds
                 ))
-                .font(.system(size: 12))
-                .foregroundStyle(HermesTheme.cream.opacity(0.4))
+                .font(.caption)
+                .foregroundStyle(HermesTheme.cream.opacity(0.7))
                 .padding(.horizontal, 20)
                 .frame(height: 96, alignment: .top)
             } else {

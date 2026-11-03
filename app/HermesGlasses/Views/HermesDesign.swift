@@ -64,7 +64,7 @@ enum HermesTheme {
     /// Warm black used for hero cards and dark chrome (#1C1B1A)
     static let ink = Color(hex: 0x1C1B1A)
     /// Warm mid grey for supporting copy (#6E6A64)
-    static let inkSoft = Color(hex: 0x6E6A64)
+    static let inkSoft = Color.hermesAdaptive(light: 0x6E6A64, dark: 0xB8B2AA)
     /// Cream used for text on warm black (#F5F2EE)
     static let cream = Color(hex: 0xF5F2EE)
 
@@ -226,7 +226,7 @@ struct HermesSectionHeader: View {
 
     var body: some View {
         Text(title.uppercased())
-            .font(.system(size: 13))
+            .font(.footnote)
             .foregroundStyle(HermesTheme.inkSoft)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 36)
@@ -239,8 +239,8 @@ struct HermesSectionFooter: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 13))
-            .foregroundStyle(HermesTheme.inkSoft.opacity(0.85))
+            .font(.footnote)
+            .foregroundStyle(HermesTheme.inkSoft)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 36)
@@ -295,7 +295,7 @@ struct HermesIconTile: View {
 struct HermesChevron: View {
     var body: some View {
         Image(systemName: "chevron.right")
-            .font(.system(size: 13, weight: .semibold))
+            .font(.footnote.weight(.semibold))
             .foregroundStyle(.tertiary)
     }
 }
@@ -316,12 +316,12 @@ struct HermesRow<Trailing: View>: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 17))
+                    .font(.body)
                     .kerning(-0.43)
                     .foregroundStyle(.primary)
                 if let subtitle {
                     Text(subtitle)
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -364,7 +364,7 @@ struct HermesRowValue: View {
     var body: some View {
         if let value {
             Text(value)
-                .font(.system(size: 17))
+                .font(.body)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
@@ -434,7 +434,7 @@ struct HermesStatusPill: View {
                     .frame(width: 7, height: 7)
             }
             Text(text)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(tinted ? HermesTheme.accentOnCard : Color.secondary)
                 .lineLimit(1)
                 .fixedSize()
@@ -498,11 +498,11 @@ struct HermesEyeToggle: View {
                 Image(systemName: warns ? "exclamationmark.triangle.fill" : systemImage)
                     .font(.system(size: 11, weight: .semibold))
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
             }
             .foregroundStyle(selected ? .white : Color.secondary)
             .padding(.horizontal, 11)
-            .frame(height: 28)
+            .frame(minHeight: 44)
             .background(
                 selected
                     ? AnyShapeStyle(warns ? HermesTheme.accentDeep : HermesTheme.accent)
@@ -512,6 +512,8 @@ struct HermesEyeToggle: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityHint(warns ? "Glasses camera needs attention" : "Select camera source")
     }
 }
 
@@ -530,11 +532,11 @@ struct HermesPrimaryButton: View {
                         .font(.system(size: 15, weight: .semibold))
                 }
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.callout.weight(.semibold))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 48)
+            .frame(minHeight: 48)
             .background(
                 enabled ? HermesTheme.accent : Color.secondary.opacity(0.4),
                 in: Capsule()
@@ -554,10 +556,10 @@ struct HermesDestructiveButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: height > 44 ? 16 : 15, weight: .semibold))
+                .font(.callout.weight(.semibold))
                 .foregroundStyle(HermesTheme.destructive)
                 .padding(.horizontal, height > 44 ? 20 : 18)
-                .frame(height: height)
+                .frame(minHeight: max(44, height))
                 .background(HermesTheme.destructive.opacity(0.12), in: Capsule())
         }
         .buttonStyle(.plain)
@@ -574,10 +576,10 @@ struct HermesChromePill: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(prominent ? HermesTheme.accentLight : HermesTheme.cream)
                 .padding(.horizontal, 12)
-                .frame(height: 30)
+                .frame(minHeight: 44)
                 .background(
                     prominent
                         ? HermesTheme.accent.opacity(0.25)
@@ -616,14 +618,14 @@ struct HermesDeviceCard<Accessory: View>: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title)
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.headline)
                         .kerning(-0.3)
                         .foregroundStyle(HermesTheme.cream)
                     HStack(spacing: 6) {
                         Circle().fill(dot).frame(width: 7, height: 7)
                         Text(status)
-                            .font(.system(size: 13))
-                            .foregroundStyle(HermesTheme.cream.opacity(0.6))
+                            .font(.footnote)
+                            .foregroundStyle(HermesTheme.cream.opacity(0.7))
                             .lineLimit(1)
                     }
                 }
@@ -639,7 +641,7 @@ struct HermesDeviceCard<Accessory: View>: View {
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(chip.available
                                 ? HermesTheme.accentLight
-                                : HermesTheme.cream.opacity(0.4))
+                                : HermesTheme.cream.opacity(0.7))
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background(
@@ -682,10 +684,10 @@ struct HermesNotice: View {
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: systemImage)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(HermesTheme.accentOnCard)
             Text(text)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(HermesTheme.accentOnCard)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
@@ -714,7 +716,7 @@ struct HermesStatTile: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             Text(caption)
-                .font(.system(size: 12))
+                .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)

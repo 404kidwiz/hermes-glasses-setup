@@ -19,3 +19,11 @@ Implemented terminal camera error panel with full error text, Retry camera, Back
 Status-sound follow-up: wearer confirmed manual test tone and automatic processing tone plus spoken reply. Recovery/error tones remain individually unverified.
 
 - Physical acceptance follow-up: wearer confirmed Lens preview works and voice replies still work after closing Lens with Done. Normal preview/voice continuity passes by user report. No camera failure occurred in this check; Retry camera after a real failure remains unverified.
+
+## Conversation GUI polish — 2026-11-03
+
+Implemented compact header and scrollable conversation camera; explicit microphone menu and independent Stop speaking action; consistent Tools/Setup/Lens shortcuts; scalable semantic text, adaptive accessibility layouts and larger shared touch targets; confirmation before People/Object Log deletion, with Cancel preserving records and deleted People entries protected from dismissal autosave.
+
+Simulator and signed-device builds passed during integration; EncounterStore and LensSessionStore suites passed. Independent source review found no blockers. Normal light and accessibility-large dark conversation fixtures were inspected; these use synthetic messages, not live audio. Large text revealed cramped controls, corrected with a scrollable shortcut row, vertically arranged speech controls and a scrollable screen. Full VoiceOver, largest-size interaction and physical acceptance of the new controls remain open.
+
+Final GUI build verification: simulator, signed iPhone and sanitized unsigned public builds passed. Updated app installed and launched successfully. Public secret scan found no leaks. Wearer test of explicit microphone selection and Stop speaking is pending.
