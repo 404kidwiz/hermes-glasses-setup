@@ -2529,6 +2529,9 @@ final class HermesSessionViewModel {
         if deviceSession != nil || lensSession != nil { return }
 
         let session = try wearables.createSession(deviceSelector: deviceSelector)
+        var committed = false
+        defer { if !committed { session.stop() } }
+        try Task.checkCancellation()
         try session.start()
 
         // Wait until the session actually starts - the camera stream is
@@ -2542,13 +2545,14 @@ final class HermesSessionViewModel {
                 )
             }
             if Date() >= deadline {
-                session.stop()
                 throw HermesCameraError.timeout
             }
             try await Task.sleep(nanoseconds: 150_000_000)
         }
 
+        try Task.checkCancellation()
         lensSession = session
+        committed = true
         cameraManager.configure(session: session)
         if await ensureCameraPermission(interactive: false) == false {
             NSLog("[Hermes] glasses camera grant MISSING - streams will fail")
@@ -2922,6 +2926,22 @@ final class HermesSessionViewModel {
             conversationHistory.removeFirst()
         }
         lastTranscript = ""
+    }
+
+    var statusSoundTestResult = ""
+
+    func testStatusSound() {
+        guard audioCuesEnabled else {
+            statusSoundTestResult = "Turn on Status sounds first."
+            return
+        }
+        guard connectionState == .listening, !conversationCaptureActive,
+              !recordingOnlySession else {
+            statusSoundTestResult = "Start a conversation and wait until Listening before testing."
+            return
+        }
+        audioManager.playStatusCue(.ready)
+        statusSoundTestResult = audioManager.statusCueResult
     }
 
     @discardableResult

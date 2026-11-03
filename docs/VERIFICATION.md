@@ -75,3 +75,8 @@ The public unsigned build and secret scan are publication checks; they do not su
 
 ## 2026-11-03 GUI update
 Signed reference-device and simulator builds passed; updated reference app installed. Phone locked before automatic launch, so physical status-sound acceptance is pending. Short transport regression and isolated cue PCM checks passed; independent source recheck cleared scoped blockers. Targeted simulator renders cover home, setup, Tools and connection sheet in light/dark/enlarged text. This does not establish full VoiceOver, all-screen text scaling, or all-day endurance. See [GUI audit](GUI-UX-AUDIT.md).
+
+## Lens recovery UI — 2026-11-03
+Implemented terminal camera error panel with full error text, Retry camera, Back to conversation and voice-state-specific text. No indefinite spinner for terminal errors. Permission and automatic-reconnect states retain separate handling; retry preserves voice and saved captures. Cancelled camera-session startup now stops uncommitted SDK sessions. Signed build, terminal-state checks, source-derived SDK-double cancellation/failure/success regression and independent source recheck passed. Simulator fault injection rendered the panel; physical Lens/retry acceptance remains pending.
+
+Status-sound follow-up: wearer confirmed manual test tone and automatic processing tone plus spoken reply. Recovery/error tones remain individually unverified.

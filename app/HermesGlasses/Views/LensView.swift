@@ -18,6 +18,7 @@ struct LensView: View {
     @State private var selectedEntry: LensLogEntry?
     @State private var shareItem: ShareItem?
     @State private var showObjectLog = false
+    @State private var retryGeneration = 0
     @Environment(\.dismiss) private var dismiss
 
     private let hermesVM: HermesSessionViewModel
@@ -31,13 +32,23 @@ struct LensView: View {
         VStack(spacing: 0) {
             header
             feed
-            gazeSlider
-            snapStrip
+            if !model.hasCameraFailure { gazeSlider }
+            if !model.hasCameraFailure || !model.snaps.isEmpty { snapStrip }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(HermesTheme.lensChrome.ignoresSafeArea())
         .preferredColorScheme(.dark)
-        .task { await model.start() }
+        .task(id: retryGeneration) {
+            #if DEBUG && targetEnvironment(simulator)
+            if ProcessInfo.processInfo.arguments.contains("lens-error"), retryGeneration == 0 {
+                model.errorBanner = "Camera stream error: videoStreamingError"
+                model.statusText = "Camera stopped. Tap Retry camera."
+                return
+            }
+            #endif
+            if retryGeneration == 0 { await model.start() }
+            else { await model.retryCamera() }
+        }
         .onDisappear { model.stop() }
         .sheet(item: $selectedEntry) { entry in
             entryDetail(entry)
@@ -56,7 +67,7 @@ struct LensView: View {
         HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 1) {
                 HermesScreenTitle(text: "LENS")
-                Text(model.errorBanner ?? model.statusText)
+                Text(model.hasCameraFailure ? "Camera unavailable" : (model.errorBanner ?? model.statusText))
                     .font(.system(size: 12))
                     .foregroundStyle(model.errorBanner == nil
                         ? HermesTheme.cream.opacity(0.5)
@@ -105,7 +116,9 @@ struct LensView: View {
     @ViewBuilder
     private var feed: some View {
         Group {
-            if let image = model.feedImage {
+            if model.hasCameraFailure {
+                cameraFailure
+            } else if let image = model.feedImage {
                 GeometryReader { geo in
                     let fitted = fittedRect(imageSize: image.size, in: geo.size)
                     ZStack {
@@ -168,6 +181,60 @@ struct LensView: View {
         .background(HermesTheme.lensStage)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .padding(.horizontal, 12)
+    }
+
+    private var voiceStatus: String {
+        guard hermesVM.audio.isCapturing else {
+            return "Return to the conversation to start listening."
+        }
+        switch hermesVM.connectionState {
+        case .listening: return "Voice is still listening."
+        case .processing: return "Your voice request is still processing."
+        case .speaking: return "Your voice reply is still playing."
+        default: return "Voice is not currently listening."
+        }
+    }
+
+    private var cameraFailure: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                Image(systemName: "video.slash")
+                    .font(.system(size: 44))
+                    .accessibilityHidden(true)
+                Text("Camera unavailable")
+                    .font(.title2.bold())
+                    .accessibilityAddTraits(.isHeader)
+                Text(voiceStatus)
+                    .font(.body)
+                Text(model.errorBanner ?? "The video stream stopped.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                Button {
+                    retryGeneration += 1
+                } label: {
+                    Text("Retry camera")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(HermesTheme.accent)
+                .disabled(model.isStarting)
+                Button {
+                    model.stop()
+                    dismiss()
+                } label: {
+                    Text("Back to conversation")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                }
+                .buttonStyle(.bordered)
+                .tint(.white)
+            }
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .padding(24)
+        }
     }
 
     /// Where the aspect-fit image actually lands inside the container -

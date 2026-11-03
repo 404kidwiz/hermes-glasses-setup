@@ -373,19 +373,30 @@ final class HermesAudioManager: NSObject, @unchecked Sendable {
     // distinct SIGABRTs in the field). AVAudioPlayer owns its rendering,
     // survives route changes, and always calls its delegate on completion.
 
+    private(set) var statusCueResult = "Not tested"
+
     /// Uses the existing hands-free route only. Never activate or reconfigure
     /// AVAudioSession merely to beep, and never compete with a spoken reply.
     @MainActor
     @discardableResult
     func playStatusCue(_ cue: HermesStatusCue) -> TimeInterval {
         let session = AVAudioSession.sharedInstance()
-        guard isCapturing, clipPlayer == nil, !awaitingStreamClips,
-              session.currentRoute.outputs.contains(where: { $0.portType == .bluetoothHFP })
-        else { return 0 }
+        guard isCapturing else {
+            statusCueResult = "Start listening before testing a sound."
+            return 0
+        }
+        guard clipPlayer == nil, !awaitingStreamClips else {
+            statusCueResult = "Wait until the reply finishes, then try again."
+            return 0
+        }
+        guard session.currentRoute.outputs.contains(where: { $0.portType == .bluetoothHFP }) else {
+            statusCueResult = "Bluetooth call audio is not active. Select Glasses Mic and restart listening."
+            return 0
+        }
         let pcm = Self.makeStatusCuePCM(cue)
         do {
             let player = try AVAudioPlayer(data: Self.wavContainer(pcm16: pcm, sampleRate: 24000))
-            player.volume = 0.35
+            player.volume = 0.65
             statusCuePlayer?.stop()
             statusCuePlayer = player
             // Drop only cue-time mic buffers; do not mutate recognizer state
@@ -393,13 +404,17 @@ final class HermesAudioManager: NSObject, @unchecked Sendable {
             cueSuppressionUntil.withLock {
                 $0 = ProcessInfo.processInfo.systemUptime + player.duration + 0.08
             }
+            player.prepareToPlay()
             guard player.play() else {
                 stopStatusCue()
+                statusCueResult = "The sound player could not start."
                 return 0
             }
+            statusCueResult = "Sound sent to Bluetooth. Confirm whether you heard it."
             return player.duration
         } catch {
             stopStatusCue()
+            statusCueResult = "The sound could not be prepared."
             return 0
         }
     }
@@ -412,9 +427,10 @@ final class HermesAudioManager: NSObject, @unchecked Sendable {
 
     static func makeStatusCuePCM(_ cue: HermesStatusCue) -> Data {
         let sampleRate = 24000.0
-        let framesPerTone = 1440 // 60 ms; even a two-note cue lasts only 120 ms.
-        var samples = [Int16]()
-        samples.reserveCapacity(framesPerTone * cue.frequencies.count)
+        let framesPerTone = 4320 // 180 ms per note, audible without a long interruption.
+        // Allow the existing Bluetooth output a short lead-in before the tone.
+        var samples = [Int16](repeating: 0, count: 2880)
+        samples.reserveCapacity(2880 + framesPerTone * cue.frequencies.count)
         for frequency in cue.frequencies {
             for i in 0..<framesPerTone {
                 let envelope = min(1.0, min(Double(i), Double(framesPerTone - 1 - i)) / 180.0)

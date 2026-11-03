@@ -47,6 +47,7 @@ final class LensViewModel {
     var statusText = "Connecting to glasses…"
     var errorBanner: String?
     var isStreaming = false
+    var isStarting = false
     var fps = 0
     var captureStage: CaptureStage?
     /// The glasses camera grant is missing, so the stream cannot work until
@@ -104,8 +105,11 @@ final class LensViewModel {
     }
 
     func start() async {
+        guard !didStop, !isStarting, !Task.isCancelled else { return }
+        isStarting = true
+        defer { isStarting = false }
         errorBanner = nil
-        sessionStart = Date()
+        if vision == nil { sessionStart = Date() }
 
         hermesVM.logVisionDiagnostics("lens-start")
         var route = hermesVM.visionRoute
@@ -118,7 +122,9 @@ final class LensViewModel {
             // Check the Meta AI grant BEFORE fighting with the stream: it is
             // the documented reason a stream is refused, and the fix is one
             // tap rather than a mystery.
-            if await hermesVM.glassesCameraGranted() == false {
+            let granted = await hermesVM.glassesCameraGranted()
+            guard !didStop, !Task.isCancelled else { return }
+            if granted == false {
                 needsGlassesCameraGrant = true
                 errorBanner = "The glasses camera isn't allowed yet."
                 statusText = "Tap Allow camera to grant it in the Meta AI app"
@@ -142,6 +148,7 @@ final class LensViewModel {
             }
         }
 
+        guard !didStop, !Task.isCancelled else { return }
         hermesVM.pinVisionRoute(route)
         vision = hermesVM.vision
         sharesSessionStream = hermesVM.visionStreamIsShared
@@ -154,6 +161,7 @@ final class LensViewModel {
             errorBanner = "Detection model failed to load."
         }
 
+        guard !didStop, !Task.isCancelled else { return }
         detector.onDetections = { [weak self] detections in
             // ObjectDetector calls this on the main queue.
             MainActor.assumeIsolated {
@@ -162,6 +170,22 @@ final class LensViewModel {
         }
 
         await beginStream()
+    }
+
+    var hasCameraFailure: Bool {
+        !isStarting && !isStreaming && errorBanner != nil && !needsGlassesCameraGrant
+    }
+
+    /// Explicit retry starts a fresh bounded attempt without ending the voice session.
+    func retryCamera() async {
+        guard !didStop, !isStarting, !Task.isCancelled else { return }
+        endStream()
+        feedImage = nil
+        detections = []
+        isStreaming = false
+        streamRecoveryUsed = false
+        needsGlassesCameraGrant = false
+        await start()
     }
 
     /// Start (or restart) the live camera stream. Assumes the camera session
@@ -253,7 +277,7 @@ final class LensViewModel {
         guard hermesVM.visionRoute == .glasses,
               message == "videoStreamingError", !streamRecoveryUsed else {
             errorBanner = "Camera stream error: \(message)"
-            statusText = "Camera stopped. Close and reopen Lens to retry."
+            statusText = "Camera stopped. Tap Retry camera."
             return
         }
         streamRecoveryUsed = true
@@ -302,8 +326,7 @@ final class LensViewModel {
                     Task { @MainActor [weak self] in
                         guard let self, !self.didStop,
                               self.streamGeneration == generation else { return }
-                        self.errorBanner = "Camera stream error: \(message)"
-                        self.isStreaming = false
+                        self.handleStreamFailure(message)
                     }
                 }
             )

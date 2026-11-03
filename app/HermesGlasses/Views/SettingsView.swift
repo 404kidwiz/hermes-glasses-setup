@@ -797,8 +797,15 @@ private struct VoicePage: View {
                     set: { hermesVM.audioCuesEnabled = $0 }
                 ))
                 .frame(minHeight: 44)
+                Button("Test status sound") { hermesVM.testStatusSound() }
+                    .frame(minHeight: 44)
+                    .disabled(!hermesVM.audioCuesEnabled)
+                if !hermesVM.statusSoundTestResult.isEmpty {
+                    Text(hermesVM.statusSoundTestResult)
+                        .font(.callout).foregroundStyle(.secondary)
+                }
             } footer: {
-                Text("Optional short sounds for ready, working, reconnecting and errors. Off by default. Uses the current audio output; Bluetooth routing may vary.")
+                Text("Optional sounds for ready, working, reconnecting and errors. Start listening with Glasses Mic before testing. Sounds use the active Bluetooth call route; they do not change your audio route.")
             }
 
             Section {

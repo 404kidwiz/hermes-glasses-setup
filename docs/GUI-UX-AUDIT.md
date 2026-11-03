@@ -89,3 +89,12 @@ Pending: new physical status-sound test, real-device VoiceOver traversal, full D
 ![Tools](gui-audit/tools-light.png)
 
 - Sanitized handoff snapshot unsigned iOS build passed. Gitleaks scan and known-private-identity pattern check passed.
+
+## Lens recovery UI — 2026-11-03
+Implemented terminal camera error panel with full error text, Retry camera, Back to conversation and voice-state-specific text. No indefinite spinner for terminal errors. Permission and automatic-reconnect states retain separate handling; retry preserves voice and saved captures. Cancelled camera-session startup now stops uncommitted SDK sessions. Signed build, terminal-state checks, source-derived SDK-double cancellation/failure/success regression and independent source recheck passed. Simulator fault injection rendered the panel; physical Lens/retry acceptance remains pending.
+
+Status-sound follow-up: wearer confirmed manual test tone and automatic processing tone plus spoken reply. Recovery/error tones remain individually unverified.
+
+![Lens recovery panel — simulated camera failure, voice inactive](gui-audit/lens-recovery.png)
+
+Reference iPhone installation and launch passed. Sanitized handoff unsigned build and secret scan passed. Physical acceptance of this Lens update is pending.

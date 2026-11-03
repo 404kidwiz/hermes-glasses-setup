@@ -142,6 +142,7 @@ struct ContentView: View {
                 case "setup": settingsRoute = .setup; showSettings = true
                 case "settings": showSettings = true
                 case "tools": showAppDrawer = true
+                case "lens-error": showLens = true
                 case "connection": connectionExpanded = true
                 default: break
                 }

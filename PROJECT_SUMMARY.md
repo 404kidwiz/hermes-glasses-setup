@@ -12,3 +12,8 @@ Optional conversation preview (2026-11-03): Show camera/Hide camera, live status
 
 ## 2026-11-03 GUI improvements
 Implemented connection sheet, inline recovery/information, visible Tools/Setup entries, optional Bluetooth status tones, and guided connection checks with allowlisted support export. Ten-skill GUI audit plus targeted simulator renders documented in docs/GUI-UX-AUDIT.md. Signed reference and unsigned public builds passed; short recovery tests, cue generation checks and independent review passed. Reference installation passed but launch was blocked by phone lock; wearer sound/UI check pending. Broader accessibility and endurance checks remain open.
+
+## Lens recovery UI — 2026-11-03
+Implemented terminal camera error panel with full error text, Retry camera, Back to conversation and voice-state-specific text. No indefinite spinner for terminal errors. Permission and automatic-reconnect states retain separate handling; retry preserves voice and saved captures. Cancelled camera-session startup now stops uncommitted SDK sessions. Signed build, terminal-state checks, source-derived SDK-double cancellation/failure/success regression and independent source recheck passed. Simulator fault injection rendered the panel; physical Lens/retry acceptance remains pending.
+
+Status-sound follow-up: wearer confirmed manual test tone and automatic processing tone plus spoken reply. Recovery/error tones remain individually unverified.
