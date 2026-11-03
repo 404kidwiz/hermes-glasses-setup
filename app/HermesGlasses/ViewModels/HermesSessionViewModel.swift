@@ -91,6 +91,14 @@ final class HermesSessionViewModel {
     var isGlassesConnected: Bool = false
     var bridgeStatus: BridgeStatus = .unknown
     var bridgeDiagnostics = "No bridge session yet"
+    /// Inline progress/success, never an error alert. Nil outside recovery.
+    var recoveryStatus: String?
+    var audioCuesEnabled = UserDefaults.standard.bool(forKey: "audio_cues_enabled") {
+        didSet {
+            UserDefaults.standard.set(audioCuesEnabled, forKey: "audio_cues_enabled")
+            if !audioCuesEnabled { audioManager.stopStatusCue() }
+        }
+    }
     var chatCameraVisible = false
     var chatCameraImage: UIImage?
     var chatCameraStatus = "Connecting…"
@@ -663,6 +671,8 @@ final class HermesSessionViewModel {
     }
 
     func startSession() async {
+        recoveryStatus = nil
+        showError = false
         idleReconnectTask?.cancel()
         idleReconnectTask = nil
         recoveryAttemptUsed = false
@@ -760,10 +770,18 @@ final class HermesSessionViewModel {
                     }
                     let recoveryDetail = retry ? "idle reconnect scheduled" : recoveryReason
                     self.bridgeDiagnostics = client.diagnosticSummary + " · " + recoveryDetail
+                    // Let the optional 120 ms cue finish on the still-active
+                    // HFP route, then tear down. No route changes for the cue.
+                    let cueDuration = self.playStatusCue(retry ? .reconnecting : .error)
+                    if cueDuration > 0 {
+                        try? await Task.sleep(nanoseconds: UInt64(cueDuration * 1_000_000_000))
+                        guard self.apiClient === client,
+                              self.connectionState != .disconnected else { return }
+                    }
                     self.endSession()
                     if retry {
                         self.recoveryAttemptUsed = true
-                        self.show(notice: "Connection lost while idle. Reconnecting once; no request will be repeated.")
+                        self.recoveryStatus = "Reconnecting… Your request will not be repeated."
                         self.idleReconnectTask = Task { @MainActor [weak self] in
                             do { try await Task.sleep(nanoseconds: 2_000_000_000) } catch { return }
                             guard let self, !Task.isCancelled,
@@ -889,6 +907,10 @@ final class HermesSessionViewModel {
 
         // Bridge connected, mic live, recognizer running
         connectionState = .listening
+        if recoveryStatus != nil {
+            recoveryStatus = "Reconnected"
+        }
+        if engagingBrain { playStatusCue(.ready) }
     }
 
     /// Every bridge callback in one place, so `startSession` reads as the
@@ -1162,6 +1184,7 @@ final class HermesSessionViewModel {
             connectionState = .processing
             displayManager.showThinking(query: trimmed)
             speechRecognizer.isSuspended = true
+            playStatusCue(.processing)
             Task { await askDirect(trimmed, context: context) }
         } else {
             guard apiClient?.isConnected == true else { return }
@@ -1171,6 +1194,7 @@ final class HermesSessionViewModel {
             displayManager.showThinking(query: trimmed)
             // Pause recognition so the mic doesn't transcribe Hermes's TTS
             speechRecognizer.isSuspended = true
+            playStatusCue(.processing)
             let outgoing = context.map { "[Context: \($0)]\n\n\(trimmed)" } ?? trimmed
             apiClient?.sendQuery(
                 outgoing,
@@ -2409,6 +2433,7 @@ final class HermesSessionViewModel {
     }
 
     func endSession() {
+        recoveryStatus = nil
         hideChatCamera()
         sessionEpoch &+= 1
         idleReconnectTask?.cancel()
@@ -2899,7 +2924,16 @@ final class HermesSessionViewModel {
         lastTranscript = ""
     }
 
+    @discardableResult
+    private func playStatusCue(_ cue: HermesStatusCue) -> TimeInterval {
+        guard audioCuesEnabled, !conversationCaptureActive,
+              !recordingOnlySession, connectionState != .speaking else { return 0 }
+        return audioManager.playStatusCue(cue)
+    }
+
     private func show(_ message: String) {
+        playStatusCue(.error)
+        recoveryStatus = nil
         errorMessage = message
         showError = true
         // A test waiting on a round trip has just learnt its outcome: this

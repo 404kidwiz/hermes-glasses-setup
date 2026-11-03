@@ -21,6 +21,20 @@ enum CaptureRoute {
     case headsetMic
 }
 
+/// Short, nonverbal status sounds. These are local and never sent to the bridge.
+enum HermesStatusCue {
+    case ready, processing, reconnecting, error
+
+    var frequencies: [Double] {
+        switch self {
+        case .ready: return [660, 880]
+        case .processing: return [520]
+        case .reconnecting: return [440, 660]
+        case .error: return [440, 330]
+        }
+    }
+}
+
 /// Manages audio capture and playback for the Hermes Glasses app
 final class HermesAudioManager: NSObject, @unchecked Sendable {
     // MARK: - Callbacks
@@ -119,7 +133,7 @@ final class HermesAudioManager: NSObject, @unchecked Sendable {
     private var outputNode: AVAudioNode { audioEngine.outputNode }
     private let captureFormat: AVAudioFormat
 
-    private var isCapturing: Bool = false
+    private(set) var isCapturing: Bool = false
     private var configChangeObserver: NSObjectProtocol?
 
     /// Everything the tap block touches. `startCapture`/`rebuildEngine`/
@@ -147,6 +161,9 @@ final class HermesAudioManager: NSObject, @unchecked Sendable {
 
     // Playback - a self-contained clip player, independent of the engine
     private var clipPlayer: AVAudioPlayer?
+    /// Separate player, with no TTS delegate: a cue must never finish a reply.
+    private var statusCuePlayer: AVAudioPlayer?
+    private let cueSuppressionUntil = OSAllocatedUnfairLock(initialState: TimeInterval(0))
     /// Sentence clips waiting to play (bridge streams them one by one).
     private var clipQueue: [Data] = []
     /// True between audio_start and audio_end so we don't fire
@@ -331,6 +348,7 @@ final class HermesAudioManager: NSObject, @unchecked Sendable {
     }
 
     func stopCapture() {
+        stopStatusCue()
         isCapturing = false
         clipPlayer?.stop()
         clipPlayer = nil
@@ -354,6 +372,57 @@ final class HermesAudioManager: NSObject, @unchecked Sendable {
     // uncatchable NSExceptions when the engine stops under it (three
     // distinct SIGABRTs in the field). AVAudioPlayer owns its rendering,
     // survives route changes, and always calls its delegate on completion.
+
+    /// Uses the existing hands-free route only. Never activate or reconfigure
+    /// AVAudioSession merely to beep, and never compete with a spoken reply.
+    @MainActor
+    @discardableResult
+    func playStatusCue(_ cue: HermesStatusCue) -> TimeInterval {
+        let session = AVAudioSession.sharedInstance()
+        guard isCapturing, clipPlayer == nil, !awaitingStreamClips,
+              session.currentRoute.outputs.contains(where: { $0.portType == .bluetoothHFP })
+        else { return 0 }
+        let pcm = Self.makeStatusCuePCM(cue)
+        do {
+            let player = try AVAudioPlayer(data: Self.wavContainer(pcm16: pcm, sampleRate: 24000))
+            player.volume = 0.35
+            statusCuePlayer?.stop()
+            statusCuePlayer = player
+            // Drop only cue-time mic buffers; do not mutate recognizer state
+            // or schedule a callback that could resume a stopped session.
+            cueSuppressionUntil.withLock {
+                $0 = ProcessInfo.processInfo.systemUptime + player.duration + 0.08
+            }
+            guard player.play() else {
+                stopStatusCue()
+                return 0
+            }
+            return player.duration
+        } catch {
+            stopStatusCue()
+            return 0
+        }
+    }
+
+    func stopStatusCue() {
+        statusCuePlayer?.stop()
+        statusCuePlayer = nil
+        cueSuppressionUntil.withLock { $0 = 0 }
+    }
+
+    static func makeStatusCuePCM(_ cue: HermesStatusCue) -> Data {
+        let sampleRate = 24000.0
+        let framesPerTone = 1440 // 60 ms; even a two-note cue lasts only 120 ms.
+        var samples = [Int16]()
+        samples.reserveCapacity(framesPerTone * cue.frequencies.count)
+        for frequency in cue.frequencies {
+            for i in 0..<framesPerTone {
+                let envelope = min(1.0, min(Double(i), Double(framesPerTone - 1 - i)) / 180.0)
+                samples.append(Int16(sin(2 * .pi * frequency * Double(i) / sampleRate) * 7000 * envelope))
+            }
+        }
+        return samples.withUnsafeBufferPointer { Data(buffer: $0) }
+    }
 
     func playResponse(_ audioData: Data) async {
         guard !audioData.isEmpty else {
@@ -391,6 +460,7 @@ final class HermesAudioManager: NSObject, @unchecked Sendable {
     }
 
     private func startClip(_ audioData: Data) {
+        stopStatusCue()
         let wav = Self.wavContainer(pcm16: audioData, sampleRate: 24000)
         do {
             let player = try AVAudioPlayer(data: wav)
@@ -576,12 +646,18 @@ final class HermesAudioManager: NSObject, @unchecked Sendable {
         // the rest of this function.
         let callbacks = callbackLock.withLockUnchecked { $0 }
 
-        callbacks.onRawBuffer?(buffer)
-
+        let suppressCue = cueSuppressionUntil.withLock {
+            ProcessInfo.processInfo.systemUptime < $0
+        }
         if entry.level, let onLevel = callbacks.onLevel {
             let level = rawFloatRMS(buffer)
             DispatchQueue.main.async { onLevel(max(0, level)) }
         }
+
+        // Keep the visual meter responsive, but exclude our own cue from
+        // every speech path: recognizer, recording, VAD and bridge audio.
+        guard !suppressCue else { return }
+        callbacks.onRawBuffer?(buffer)
 
         let outputBuffer = convertBuffer(buffer, using: converter)
         guard let outputBuffer else { return }

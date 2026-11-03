@@ -67,3 +67,10 @@ After rollback, verify launch, auth, short reply and correct route. Gateway/mode
 ## Multiple users
 
 Use a separate Hermes home/profile, bridge token and session namespace for each user. The reference bridge has shared session/history files and is not a hardened multi-tenant service. Do not point several colleagues' phones at one personal agent and assume their conversations or tool permissions are isolated.
+
+## Connection checks and status sounds
+Tap **Connection & devices** on the conversation screen for current audio/camera/assistant status. Open **Setup** for the five-step check and an optional safe diagnostic Share sheet. Bluetooth input alone does not prove which wearable is active: complete the quiet spoken test with the phone away. Service reachable does not prove provider credentials.
+
+Settings → Voice & Microphone → status sounds enables brief Bluetooth HFP tones; the default is off. Sounds never activate an audio route. Recovery status is informational; uncertain requests are not repeated. Lens, Record and Tools are reachable from the home screen. Camera preview remains explicit Show camera/Hide camera.
+
+See [GUI audit](GUI-UX-AUDIT.md) for implementation, remaining improvements and acceptance limits.

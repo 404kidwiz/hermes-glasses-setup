@@ -53,6 +53,8 @@ enum AppearanceMode: String, CaseIterable, Identifiable {
 
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var connectionExpanded = false
     let wearablesVM: WearablesViewModel
     let hermesVM: HermesSessionViewModel
 
@@ -84,6 +86,7 @@ struct ContentView: View {
                 conversationArea
                 quickActions
             }
+            sessionFeedback
             bottomBar
         }
         .background(showsPhoneModeStage
@@ -132,6 +135,18 @@ struct ContentView: View {
             LensView(hermesVM: hermesVM)
         }
         .task {
+            #if DEBUG && targetEnvironment(simulator)
+            if let index = ProcessInfo.processInfo.arguments.firstIndex(of: "--audit-screen"),
+               ProcessInfo.processInfo.arguments.indices.contains(index + 1) {
+                switch ProcessInfo.processInfo.arguments[index + 1] {
+                case "setup": settingsRoute = .setup; showSettings = true
+                case "settings": showSettings = true
+                case "tools": showAppDrawer = true
+                case "connection": connectionExpanded = true
+                default: break
+                }
+            }
+            #endif
             hermesVM.logVisionDiagnostics("app-launch")
             await hermesVM.refreshGlassesCameraStatus()
             await hermesVM.checkBridge()
@@ -286,8 +301,15 @@ struct ContentView: View {
                 .disabled(hermesVM.connectionState != .disconnected)
                 .opacity(hermesVM.connectionState == .disconnected ? 1 : 0.5)
 
-                statusPills
+                Spacer(minLength: 0)
+                Button("Setup") {
+                    settingsRoute = .setup
+                    showSettings = true
+                }
+                .frame(minWidth: 44, minHeight: 44)
             }
+
+            connectionPanel
 
             if let glassesWarning {
                 Button {
@@ -319,6 +341,105 @@ struct ContentView: View {
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 10)
+    }
+
+    private var connectionPanel: some View {
+        Button { connectionExpanded = true } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Connection & devices").font(.subheadline.weight(.semibold))
+                    Text(activeMicrophone).font(.caption)
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
+                }
+                Spacer()
+                Image(systemName: "chevron.right").accessibilityHidden(true)
+            }
+            .frame(minHeight: 44)
+        }
+        .sheet(isPresented: $connectionExpanded) {
+            NavigationStack {
+                ScrollView {
+                    VStack(spacing: 18) {
+                        connectionRow("Glasses", value: hermesVM.isGlassesConnected ? "Connected" :
+                            (hermesVM.glassesAvailable ? "Available" : "Not connected"), icon: "eyeglasses")
+                        connectionRow("Microphone", value: activeMicrophone, icon: "mic")
+                        connectionRow("Camera", value: hermesVM.chatCameraVisible ? hermesVM.chatCameraStatus :
+                            (hermesVM.visionRoute == .glasses ? "Glasses · on request" : "iPhone · on request"), icon: "camera")
+                        connectionRow("Assistant", value: assistantConnection, icon: "network")
+                        NavigationLink("Check setup & connection") {
+                            SetupHealthView(hermesVM: hermesVM, wearablesVM: wearablesVM)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    }
+                    .padding(20)
+                }
+                .background(HermesTheme.canvas)
+                .navigationTitle("Connection & devices")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { connectionExpanded = false }
+                    }
+                }
+            }
+            .presentationDetents([.medium, .large])
+        }
+    }
+
+    private func connectionRow(_ title: String, value: String, icon: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Label(title, systemImage: icon).font(.subheadline.weight(.semibold))
+            Text(value).font(.subheadline).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var activeMicrophone: String {
+        guard hermesVM.audio.isCapturing else {
+            return "Selected: \(hermesVM.micSource.shortLabel) mic · not listening"
+        }
+        if hermesVM.audio.isUsingBluetoothInput {
+            return "Bluetooth microphone active"
+        }
+        if hermesVM.connectionState == .connecting { return "Setting up microphone…" }
+        return "iPhone microphone active"
+    }
+
+    private var assistantConnection: String {
+        if hermesVM.backend == .direct {
+            return directKeyReady ? "\(assistantName) · configured" : "\(assistantName) · key required"
+        }
+        switch hermesVM.bridgeStatus {
+        case .reachable: return "Hermes service reachable"
+        case .unreachable: return "Hermes service unavailable"
+        case .checking: return "Checking Hermes service…"
+        case .unknown: return "Hermes service not checked"
+        }
+    }
+
+    @ViewBuilder private var sessionFeedback: some View {
+        if let recovery = hermesVM.recoveryStatus {
+            Label(recovery, systemImage: "arrow.triangle.2.circlepath")
+                .font(.subheadline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(HermesTheme.accent.opacity(0.10))
+                .accessibilityElement(children: .combine)
+        }
+        if hermesVM.showNotice {
+            HStack(alignment: .top) {
+                Label(hermesVM.noticeMessage, systemImage: "info.circle")
+                    .font(.subheadline)
+                Spacer(minLength: 4)
+                Button { hermesVM.dismissNotice() } label: {
+                    Image(systemName: "xmark").frame(width: 44, height: 44)
+                }
+                .accessibilityLabel("Dismiss information")
+            }
+            .padding(.horizontal, 12)
+            .background(HermesTheme.accent.opacity(0.10))
+        }
     }
 
     /// Backend and feature state, one pill each. Scrolls horizontally:
@@ -394,7 +515,7 @@ struct ContentView: View {
             Image(systemName: systemName)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.secondary)
-                .frame(width: 30, height: 30)
+                .frame(width: 44, height: 44)
                 .background(Color.secondary.opacity(0.12), in: Circle())
         }
         .buttonStyle(.plain)
@@ -699,7 +820,7 @@ struct ContentView: View {
             HStack(spacing: 6) {
                 Image(systemName: "speaker.wave.2.fill")
                     .font(.system(size: 11))
-                    .symbolEffect(.variableColor.iterative)
+                    .symbolEffect(.variableColor.iterative, isActive: !reduceMotion)
                 Text(speakingLabel)
                     .font(.system(size: 11, weight: .semibold))
                 Image(systemName: "stop.circle")
@@ -724,38 +845,21 @@ struct ContentView: View {
     /// The four feature screens, one tap from the conversation. Lens is
     /// the only one that needs the glasses; the rest read stored data.
     private var quickActions: some View {
-        VStack(spacing: 6) {
-            // Grab handle: the row is the top of a drawer, not the whole
-            // set. Dragging up opens everything.
-            Capsule()
-                .fill(Color.secondary.opacity(0.25))
-                .frame(width: 36, height: 4)
-                .contentShape(Rectangle().inset(by: -12))
-                .onTapGesture { showAppDrawer = true }
-
-            HStack(spacing: 8) {
-                // Record is an action, not a screen, so it is deliberately
-                // NOT a HermesApp - it has no presentation and nothing to
-                // open. It sits here because this row is where people look
-                // for features, and recording a conversation used to be
-                // reachable only from a chip that appeared after a voice
-                // session was already running.
-                if hermesVM.socialNotesEnabled {
-                    recordQuickAction
-                }
-                ForEach(HermesAppRegistry.pinned) { app in
-                    quickAction(app)
-                }
+        HStack(spacing: 12) {
+            if let lens = HermesAppRegistry.all.first(where: { $0.id == "lens" }) {
+                quickAction(lens)
             }
+            if hermesVM.socialNotesEnabled { recordQuickAction }
+            Button { showAppDrawer = true } label: {
+                Label("Tools", systemImage: "square.grid.2x2")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.bordered)
+            .accessibilityHint("Open People, Map, Object Log and other tools")
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 10)
-        .gesture(
-            DragGesture(minimumDistance: 12)
-                .onEnded { value in
-                    if value.translation.height < -20 { showAppDrawer = true }
-                }
-        )
     }
 
     /// Why this app can't be opened right now, or nil. Stated in the drawer
@@ -908,7 +1012,7 @@ struct ContentView: View {
                     : "Switch microphone"
             )
 
-            HermesDestructiveButton(title: "End", height: 40) {
+            HermesDestructiveButton(title: "End", height: 44) {
                 hermesVM.endSession()
             }
         }

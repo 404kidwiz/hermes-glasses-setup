@@ -9,3 +9,6 @@ Status: sanitized transport diagnostics and one-attempt idle recovery are implem
 5. **Physical device acceptance and packaging.** Test glasses audio/camera, interruptions, locked-phone behavior and long sessions. Then replace hardcoded service identity fields with a reviewed installer, and evaluate appropriate app distribution for the intended audience.
 
 Recommended next step: finish the physical-hardware and longer-turn acceptance matrix before adding more modes or making a broader reliability claim. Measure matched prompts on Wi-Fi/cellular before changing network settings.
+
+## GUI follow-up
+Five UX changes are implemented in the snapshot: connection sheet, inline recovery, visible Tools/Setup, optional status tones, guided health check/export. See [ranked GUI audit](GUI-UX-AUDIT.md) for 13 further findings; prioritize deletion recovery, Lens error retry and accessibility. New physical status-tone acceptance remains pending.

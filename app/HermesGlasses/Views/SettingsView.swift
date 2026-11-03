@@ -22,6 +22,7 @@ import SwiftUI
 /// Sub-pages that can be opened directly from elsewhere in the app.
 enum SettingsRoute: Hashable {
     case devices
+    case setup
 }
 
 struct SettingsView: View {
@@ -71,6 +72,12 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
 
                 HermesSection {
+                    NavigationLink(value: SettingsRoute.setup) {
+                        HermesRow("Setup & connection check", icon: "checklist", value: nil)
+                    }
+                    .buttonStyle(.plain)
+                    .frame(minHeight: 44)
+                    HermesDivider()
                     navRow("Assistant", icon: "brain", value: assistantValue) {
                         AssistantPage(
                             hermesVM: hermesVM,
@@ -164,6 +171,8 @@ struct SettingsView: View {
                 switch route {
                 case .devices:
                     DevicesPage(hermesVM: hermesVM, wearablesVM: wearablesVM)
+                case .setup:
+                    SetupHealthView(hermesVM: hermesVM, wearablesVM: wearablesVM)
                 }
             }
             .onAppear {
@@ -783,6 +792,16 @@ private struct VoicePage: View {
             }
 
             Section {
+                Toggle("Status sounds", isOn: Binding(
+                    get: { hermesVM.audioCuesEnabled },
+                    set: { hermesVM.audioCuesEnabled = $0 }
+                ))
+                .frame(minHeight: 44)
+            } footer: {
+                Text("Optional short sounds for ready, working, reconnecting and errors. Off by default. Uses the current audio output; Bluetooth routing may vary.")
+            }
+
+            Section {
                 Toggle("iPhone voice", isOn: Binding(
                     get: { hermesVM.useDeviceTTS },
                     set: { hermesVM.useDeviceTTS = $0 }
@@ -1225,5 +1244,220 @@ private struct DeveloperPage: View {
         case .some(false): return "Denied"
         case .none: return "Unknown"
         }
+    }
+}
+
+
+// MARK: - Guided setup and safe support export
+
+/// Current checks, not a stored claim that a device is permanently healthy.
+/// The wearer must confirm the audio test; registration alone proves no audio route.
+struct SetupHealthView: View {
+    let hermesVM: HermesSessionViewModel
+    let wearablesVM: WearablesViewModel
+
+    @State private var checking = false
+    @State private var startingTest = false
+    @State private var spokenTestConfirmed = false
+    @State private var micChangeInProgress = false
+
+    private var registered: Bool { wearablesVM.registrationState == .registered }
+    private var sessionActive: Bool {
+        switch hermesVM.connectionState {
+        case .listening, .processing, .speaking, .recording: return true
+        default: return false
+        }
+    }
+    private var cameraStatus: String {
+        switch hermesVM.cameraPermissionGranted {
+        case true: return "Allowed"
+        case false: return "Permission needed"
+        case nil: return "Not checked"
+        }
+    }
+    private var bridgeStatus: String {
+        if hermesVM.backend == .direct {
+            return !hermesVM.directProvider.requiresKey || hermesVM.hasDirectKey
+                ? "Direct provider configured; response untested" : "Direct provider key needed"
+        }
+        switch hermesVM.bridgeStatus {
+        case .unknown: return "Not checked"
+        case .checking: return "Checking…"
+        case .reachable: return "Bridge reachable"
+        case .unreachable: return "Bridge unreachable"
+        }
+    }
+    private var sessionStatus: String {
+        switch hermesVM.connectionState {
+        case .disconnected: return "Stopped"
+        case .connecting: return "Connecting"
+        case .listening: return "Listening"
+        case .recording: return "Recording"
+        case .processing: return "Working"
+        case .speaking: return "Speaking"
+        case .error: return "Error (details omitted)"
+        }
+    }
+
+    /// Deliberate allowlist: never include endpoint, address, names, messages,
+    /// provider keys, transcript, location, device IDs, or raw SDK errors.
+    private var supportSummary: String {
+        """
+        Hermes Glasses connection check
+        App version: \(SettingsView.appVersion)
+        Registration: \(registered ? "Registered" : "Not registered")
+        Glasses reachable: \(hermesVM.glassesAvailable ? "Yes" : "No")
+        Glasses session active: \(hermesVM.isGlassesConnected ? "Yes" : "No")
+        Selected microphone: \(hermesVM.micSource.shortLabel)
+        Bluetooth microphone input active: \((sessionActive && hermesVM.audio.isUsingBluetoothInput) ? "Yes" : "No / not verified")
+        Camera permission: \(cameraStatus)
+        Assistant mode: \(hermesVM.backend == .bridge ? "Bridge" : "Direct")
+        Assistant check: \(bridgeStatus)
+        Session: \(sessionStatus)
+        Device speech: \(hermesVM.useDeviceTTS ? "On" : "Off")
+        Status sounds: \(hermesVM.audioCuesEnabled ? "On" : "Off")
+        Spoken test: \(spokenTestConfirmed ? "Confirmed by wearer during this check" : "Not confirmed during this check")
+
+        Excludes addresses, keys, device names and IDs, conversations, location and raw errors.
+        A reachable bridge does not verify model credentials or a completed reply.
+        """
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                Text("Check each connection, then confirm a real reply through your glasses. A green connection alone does not prove the microphone or speakers work.")
+                    .font(.body)
+                Button {
+                    Task { await refreshChecks() }
+                } label: {
+                    Label(checking ? "Checking…" : "Refresh connection checks", systemImage: "arrow.clockwise")
+                        .frame(minHeight: 44)
+                }
+                .disabled(checking)
+            }
+
+            Section("1. Pair and connect") {
+                checkRow("Meta registration", value: registered ? "Registered" : "Pairing needed",
+                         complete: registered)
+                checkRow("Glasses reachable", value: hermesVM.glassesAvailable ? "Available now" : "Not available now",
+                         complete: hermesVM.glassesAvailable)
+                if !registered {
+                    Button("Connect glasses in Meta AI") { wearablesVM.connectGlasses() }
+                        .frame(minHeight: 44)
+                        .disabled(wearablesVM.registrationState == .registering)
+                }
+                NavigationLink("Open device settings") {
+                    DevicesPage(hermesVM: hermesVM, wearablesVM: wearablesVM)
+                }
+                .frame(minHeight: 44)
+                Text("Wear and power on the glasses. Keep Bluetooth enabled. Registration and current reachability are separate checks.")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+
+            Section("2. Choose the microphone") {
+                Picker("Selected microphone", selection: Binding(
+                    get: { hermesVM.micSource },
+                    set: { source in
+                        spokenTestConfirmed = false
+                        micChangeInProgress = true
+                        Task {
+                            _ = await hermesVM.setMicSource(source)
+                            micChangeInProgress = false
+                        }
+                    }
+                )) {
+                    ForEach(MicSource.allCases, id: \.self) { source in
+                        Text(source.label).tag(source)
+                    }
+                }
+                .disabled(micChangeInProgress)
+                checkRow("Bluetooth microphone route",
+                         value: (sessionActive && hermesVM.audio.isUsingBluetoothInput) ? "Bluetooth input active" : "Not verified — start listening",
+                         complete: sessionActive && hermesVM.audio.isUsingBluetoothInput)
+                Text("Choose Glasses Mic for hands-free conversation. Selection is a preference; the spoken test below confirms the actual microphone and speakers.")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+
+            Section("3. Allow the camera") {
+                checkRow("Camera access", value: cameraStatus,
+                         complete: hermesVM.cameraPermissionGranted == true)
+                Button("Allow glasses camera") {
+                    Task { _ = await hermesVM.requestGlassesCameraAccess() }
+                }
+                .frame(minHeight: 44)
+                Text("Meta AI handles this permission. After granting it, return here and refresh the checks.")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+
+            Section("4. Check the assistant") {
+                checkRow("Assistant connection", value: bridgeStatus,
+                         complete: hermesVM.backend == .bridge && hermesVM.bridgeStatus == .reachable)
+                Text(hermesVM.backend == .bridge
+                     ? "For away access, keep Tailscale connected on both devices and the Mac awake and online. Reachability does not test model credentials."
+                     : "Direct mode uses your configured provider. Complete the spoken test to verify a response.")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+
+            Section("5. Confirm a spoken reply") {
+                Text("Place the iPhone away from you. Start listening and quietly say “Reply with hello.” Confirm only after hearing the reply through the glasses.")
+                if !sessionActive {
+                    Button(startingTest ? "Starting…" : "Start listening for the test") {
+                        spokenTestConfirmed = false
+                        startingTest = true
+                        Task {
+                            await hermesVM.startSession()
+                            startingTest = false
+                        }
+                    }
+                    .frame(minHeight: 44)
+                    .disabled(startingTest || !hermesVM.canStartSession || micChangeInProgress)
+                }
+                Toggle("I heard the reply through my glasses", isOn: $spokenTestConfirmed)
+                    .disabled(!sessionActive)
+                Text(spokenTestConfirmed ? "Confirmed by you during this check." : "Not yet confirmed. This step never passes automatically.")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+
+            Section {
+                ShareLink(item: supportSummary) {
+                    Label("Share safe diagnostic summary", systemImage: "square.and.arrow.up")
+                        .frame(minHeight: 44)
+                }
+            } header: {
+                Text("Support")
+            } footer: {
+                Text("Shares connection states and selected options only. Addresses, keys, device names and IDs, conversations, location and raw errors are excluded.")
+            }
+        }
+        .hermesFormStyle()
+        .navigationTitle("Setup & connection check")
+        .navigationBarTitleDisplayMode(.inline)
+        .task { await refreshChecks() }
+        .onChange(of: hermesVM.micSource) { _, _ in spokenTestConfirmed = false }
+        .onChange(of: hermesVM.backend) { _, _ in spokenTestConfirmed = false }
+        .onChange(of: sessionActive) { _, active in
+            if !active { spokenTestConfirmed = false }
+        }
+        .onChange(of: wearablesVM.registrationState) { _, _ in spokenTestConfirmed = false }
+    }
+
+    private func refreshChecks() async {
+        guard !checking else { return }
+        checking = true
+        defer { checking = false }
+        await hermesVM.refreshGlassesCameraStatus()
+        if hermesVM.backend == .bridge { await hermesVM.checkBridge() }
+    }
+
+    private func checkRow(_ title: String, value: String, complete: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Label(title, systemImage: complete ? "checkmark.circle.fill" : "circle")
+                .font(.headline)
+                .foregroundStyle(complete ? HermesTheme.online : .primary)
+            Text(value).font(.body).foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
     }
 }

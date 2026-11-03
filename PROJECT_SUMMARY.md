@@ -9,3 +9,6 @@ This is a source/setup kit, not a generalized installer. Signing team, bundle ID
 Lens streaming repair (2026-11-03): failed-stream cleanup, one bounded video-error retry, low-resolution streaming and lifecycle ownership guards. Signed reference build and focused review passed; wearer confirmed a working 30-second glasses preview with phone cameras covered. Longer video endurance remains untested.
 
 Optional conversation preview (2026-11-03): Show camera/Hide camera, live status, local display and owner-scoped cleanup. Reference wearer confirmed simultaneous glasses video/voice and Hide/Show without interrupting voice. Extended video endurance and rapid-toggle/background preview tests remain unverified.
+
+## 2026-11-03 GUI improvements
+Implemented connection sheet, inline recovery/information, visible Tools/Setup entries, optional Bluetooth status tones, and guided connection checks with allowlisted support export. Ten-skill GUI audit plus targeted simulator renders documented in docs/GUI-UX-AUDIT.md. Signed reference and unsigned public builds passed; short recovery tests, cue generation checks and independent review passed. Reference installation passed but launch was blocked by phone lock; wearer sound/UI check pending. Broader accessibility and endurance checks remain open.
