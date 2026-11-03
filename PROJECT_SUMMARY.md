@@ -26,4 +26,6 @@ Implemented compact header and scrollable conversation camera; explicit micropho
 
 Simulator and signed-device builds passed during integration; EncounterStore and LensSessionStore suites passed. Independent source review found no blockers. Normal light and accessibility-large dark conversation fixtures were inspected; these use synthetic messages, not live audio. Large text revealed cramped controls, corrected with a scrollable shortcut row, vertically arranged speech controls and a scrollable screen. Full VoiceOver, largest-size interaction and physical acceptance of the new controls remain open.
 
-Final GUI build verification: simulator, signed iPhone and sanitized unsigned public builds passed. Updated app installed and launched successfully. Public secret scan found no leaks. Wearer test of explicit microphone selection and Stop speaking is pending.
+Final GUI build verification: simulator, signed iPhone and sanitized unsigned public builds passed. Updated app installed and launched successfully. Public secret scan found no leaks. Wearer confirmed explicit glasses microphone selection and Stop speaking: playback stopped and the session stayed connected.
+
+Physical GUI acceptance follow-up (2026-11-03): wearer selected “Glasses Mic (call screen),” requested “Count to twenty,” and confirmed Stop speaking stopped playback while the session stayed connected. This verifies the tested control flow by user report; it does not establish full accessibility or long-session endurance.
