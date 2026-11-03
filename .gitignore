@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+*.mobileprovision
+*.p12
+*.key
+*.ipa
+*.app/
+*.log
+.venv/
+.runtime/
+.DS_Store
+
+__pycache__/
+*.pyc

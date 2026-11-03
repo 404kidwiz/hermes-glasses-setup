@@ -1,0 +1,714 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AAAA00000000000000000001 /* HermesGlassesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000101 /* HermesGlassesApp.swift */; };
+		AAAA00000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000102 /* ContentView.swift */; };
+		AAAA00000000000000000003 /* RegistrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000103 /* RegistrationView.swift */; };
+		AAAA00000000000000000004 /* WearablesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000104 /* WearablesViewModel.swift */; };
+		AAAA00000000000000000005 /* HermesSessionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000105 /* HermesSessionViewModel.swift */; };
+		AAAA00000000000000000006 /* HermesAudioManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000106 /* HermesAudioManager.swift */; };
+		AAAA00000000000000000007 /* HermesAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000107 /* HermesAPIClient.swift */; };
+		AAAA00000000000000000008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000108 /* Assets.xcassets */; };
+		AAAA00000000000000000009 /* HermesCameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000112 /* HermesCameraManager.swift */; };
+		AAAA00000000000000000010 /* HermesSpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000113 /* HermesSpeechRecognizer.swift */; };
+		AAAA00000000000000000011 /* HermesSpeechSynthesizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000114 /* HermesSpeechSynthesizer.swift */; };
+		AAAA00000000000000000871 /* BargeInPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000872 /* BargeInPolicy.swift */; };
+		AAAA00000000000000000874 /* DisabledWearables.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000873 /* DisabledWearables.swift */; };
+		AAAA00000000000000000876 /* BridgeEndpointConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000875 /* BridgeEndpointConfig.swift */; };
+		AAAA00000000000000000012 /* DirectClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000115 /* DirectClient.swift */; };
+		AAAA00000000000000000013 /* HermesDisplayLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000116 /* HermesDisplayLogic.swift */; };
+		AAAA00000000000000000014 /* HermesDisplayScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000117 /* HermesDisplayScreens.swift */; };
+		AAAA00000000000000000015 /* HermesDisplayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000118 /* HermesDisplayManager.swift */; };
+		AAAA00000000000000000016 /* DeviceContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000119 /* DeviceContextFormatter.swift */; };
+		AAAA00000000000000000017 /* DeviceContextProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000120 /* DeviceContextProvider.swift */; };
+		AAAA00000000000000000018 /* AIProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000121 /* AIProvider.swift */; };
+		AAAA00000000000000000019 /* AnthropicProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000122 /* AnthropicProvider.swift */; };
+		AAAA00000000000000000020 /* OpenAICompatibleProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000123 /* OpenAICompatibleProvider.swift */; };
+		AAAA00000000000000000021 /* GeminiProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000124 /* GeminiProvider.swift */; };
+		AAAA00000000000000000022 /* NavigationTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000125 /* NavigationTypes.swift */; };
+		AAAA00000000000000000023 /* IntentDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000126 /* IntentDetector.swift */; };
+		AAAA00000000000000000024 /* PolylineEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000127 /* PolylineEncoder.swift */; };
+		AAAA00000000000000000025 /* MapboxStaticMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000128 /* MapboxStaticMap.swift */; };
+		AAAA00000000000000000026 /* WikipediaImageClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000129 /* WikipediaImageClient.swift */; };
+		AAAA00000000000000000027 /* MapCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000130 /* MapCredentials.swift */; };
+		AAAA00000000000000000028 /* NavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000131 /* NavigationController.swift */; };
+		AAAA00000000000000000029 /* Encounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000132 /* Encounter.swift */; };
+		AAAA00000000000000000848 /* EncounterEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000847 /* EncounterEvent.swift */; };
+		AAAA00000000000000000850 /* BadgeParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000849 /* BadgeParser.swift */; };
+		AAAA00000000000000000852 /* EncounterTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000851 /* EncounterTimeline.swift */; };
+		AAAA00000000000000000854 /* BadgeReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000853 /* BadgeReader.swift */; };
+		AAAA00000000000000000860 /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000859 /* TranscriptionService.swift */; };
+		AAAA00000000000000000858 /* ConversationRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000857 /* ConversationRecorder.swift */; };
+		AAAA00000000000000000856 /* BadgeRegion.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000855 /* BadgeRegion.swift */; };
+		AAAA00000000000000000862 /* BadgeCrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000861 /* BadgeCrop.swift */; };
+		AAAA00000000000000000864 /* BarcodeReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000863 /* BarcodeReader.swift */; };
+		AAAA00000000000000000868 /* BadgePortrait.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000867 /* BadgePortrait.swift */; };
+		AAAA00000000000000000866 /* BadgeDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000865 /* BadgeDetector.swift */; };
+		AAAA00000000000000000030 /* EncounterStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000133 /* EncounterStore.swift */; };
+		AAAA00000000000000000039 /* ConversationCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000142 /* ConversationCapture.swift */; };
+		AAAA00000000000000000031 /* PeopleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000134 /* PeopleView.swift */; };
+		AAAA00000000000000000032 /* VoiceCommandCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000135 /* VoiceCommandCatalog.swift */; };
+		AAAA00000000000000000821 /* LensContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000822 /* LensContent.swift */; };
+		AAAA00000000000000000841 /* ChoiceDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000842 /* ChoiceDetector.swift */; };
+		AAAA00000000000000000843 /* HermesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000844 /* HermesApp.swift */; };
+		AAAA00000000000000000845 /* AppDrawerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000846 /* AppDrawerView.swift */; };
+		AAAA00000000000000000823 /* VisionSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000824 /* VisionSource.swift */; };
+		AAAA00000000000000000835 /* VisionRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000836 /* VisionRouting.swift */; };
+		AAAA00000000000000000837 /* Bearing.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000838 /* Bearing.swift */; };
+		AAAA00000000000000000839 /* PlaceSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000840 /* PlaceSearch.swift */; };
+		AAAA00000000000000000825 /* PhoneCameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000826 /* PhoneCameraManager.swift */; };
+		AAAA00000000000000000827 /* PermissionsCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000828 /* PermissionsCoordinator.swift */; };
+		AAAA00000000000000000829 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000830 /* OnboardingView.swift */; };
+		AAAA00000000000000000831 /* SimulatedLensView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000832 /* SimulatedLensView.swift */; };
+		AAAA00000000000000000833 /* PhoneModeSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000834 /* PhoneModeSessionView.swift */; };
+		AAAA00000000000000000033 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000136 /* SettingsView.swift */; };
+		AAAA00000000000000000034 /* DwellTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000137 /* DwellTracker.swift */; };
+		AAAA00000000000000000038 /* yolo11n.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000141 /* yolo11n.mlpackage */; };
+		AAAA00000000000000000035 /* ObjectDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000138 /* ObjectDetector.swift */; };
+		AAAA00000000000000000036 /* LensViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000139 /* LensViewModel.swift */; };
+		AAAA00000000000000000037 /* LensView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000140 /* LensView.swift */; };
+		AAAA00000000000000000815 /* ObjectLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000816 /* ObjectLogView.swift */; };
+		AAAA00000000000000000805 /* LensLogAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000806 /* LensLogAggregator.swift */; };
+		AAAA00000000000000000807 /* LensSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000808 /* LensSession.swift */; };
+		AAAA00000000000000000809 /* LensSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000810 /* LensSessionStore.swift */; };
+		AAAA00000000000000000811 /* LensPDFRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000812 /* LensPDFRenderer.swift */; };
+		AAAA00000000000000000813 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000814 /* ShareSheet.swift */; };
+		AAAA00000000000000000817 /* HermesDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000818 /* HermesDesign.swift */; };
+		AAAA00000000000000000819 /* NavigationMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00000000000000000820 /* NavigationMapView.swift */; };
+		AAAA00000000000000000801 /* MWDATCore in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA00000000000000000701 /* MWDATCore */; };
+		AAAA00000000000000000802 /* MWDATCamera in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA00000000000000000702 /* MWDATCamera */; };
+		AAAA00000000000000000803 /* MWDATMockDevice in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA00000000000000000703 /* MWDATMockDevice */; };
+		AAAA00000000000000000804 /* MWDATDisplay in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA00000000000000000704 /* MWDATDisplay */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AAAA00000000000000000101 /* HermesGlassesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HermesGlassesApp.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000102 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000103 /* RegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegistrationView.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000104 /* WearablesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WearablesViewModel.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000105 /* HermesSessionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HermesSessionViewModel.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000106 /* HermesAudioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HermesAudioManager.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000107 /* HermesAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HermesAPIClient.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000108 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AAAA00000000000000000109 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AAAA0000000000000000012A /* Hermes.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/Hermes.xcconfig; sourceTree = SOURCE_ROOT; };
+		AAAA00000000000000000110 /* HermesGlasses.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HermesGlasses.entitlements; sourceTree = "<group>"; };
+		AAAA00000000000000000111 /* Hermes Glasses.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Hermes Glasses.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AAAA00000000000000000112 /* HermesCameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HermesCameraManager.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000113 /* HermesSpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HermesSpeechRecognizer.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000114 /* HermesSpeechSynthesizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HermesSpeechSynthesizer.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000872 /* BargeInPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BargeInPolicy.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000873 /* DisabledWearables.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisabledWearables.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000875 /* BridgeEndpointConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeEndpointConfig.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000115 /* DirectClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectClient.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000116 /* HermesDisplayLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HermesDisplayLogic.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000117 /* HermesDisplayScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HermesDisplayScreens.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000118 /* HermesDisplayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HermesDisplayManager.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000119 /* DeviceContextFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceContextFormatter.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000120 /* DeviceContextProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceContextProvider.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000121 /* AIProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Providers/AIProvider.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000122 /* AnthropicProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Providers/AnthropicProvider.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000123 /* OpenAICompatibleProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Providers/OpenAICompatibleProvider.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000124 /* GeminiProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Providers/GeminiProvider.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000125 /* NavigationTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation/NavigationTypes.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000126 /* IntentDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation/IntentDetector.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000127 /* PolylineEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation/PolylineEncoder.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000128 /* MapboxStaticMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation/MapboxStaticMap.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000129 /* WikipediaImageClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation/WikipediaImageClient.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000130 /* MapCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation/MapCredentials.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000131 /* NavigationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation/NavigationController.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000132 /* Encounter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social/Encounter.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000847 /* EncounterEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social/EncounterEvent.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000849 /* BadgeParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social/BadgeParser.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000851 /* EncounterTimeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social/EncounterTimeline.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000853 /* BadgeReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social/BadgeReader.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000859 /* TranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social/TranscriptionService.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000857 /* ConversationRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social/ConversationRecorder.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000855 /* BadgeRegion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social/BadgeRegion.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000861 /* BadgeCrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social/BadgeCrop.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000863 /* BarcodeReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social/BarcodeReader.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000867 /* BadgePortrait.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social/BadgePortrait.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000865 /* BadgeDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social/BadgeDetector.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000133 /* EncounterStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social/EncounterStore.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000142 /* ConversationCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social/ConversationCapture.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000134 /* PeopleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleView.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000135 /* VoiceCommandCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCommandCatalog.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000822 /* LensContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensContent.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000842 /* ChoiceDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoiceDetector.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000844 /* HermesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HermesApp.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000846 /* AppDrawerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDrawerView.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000824 /* VisionSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionSource.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000836 /* VisionRouting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionRouting.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000838 /* Bearing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation/Bearing.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000840 /* PlaceSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigation/PlaceSearch.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000826 /* PhoneCameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneCameraManager.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000828 /* PermissionsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsCoordinator.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000830 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000832 /* SimulatedLensView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatedLensView.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000834 /* PhoneModeSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneModeSessionView.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000136 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000137 /* DwellTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lens/DwellTracker.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000141 /* yolo11n.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = yolo11n.mlpackage; sourceTree = "<group>"; };
+		AAAA00000000000000000138 /* ObjectDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lens/ObjectDetector.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000139 /* LensViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensViewModel.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000140 /* LensView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensView.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000816 /* ObjectLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectLogView.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000806 /* LensLogAggregator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lens/LensLogAggregator.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000808 /* LensSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lens/LensSession.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000810 /* LensSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lens/LensSessionStore.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000812 /* LensPDFRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lens/LensPDFRenderer.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000814 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000818 /* HermesDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HermesDesign.swift; sourceTree = "<group>"; };
+		AAAA00000000000000000820 /* NavigationMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationMapView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AAAA00000000000000000402 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAAA00000000000000000801 /* MWDATCore in Frameworks */,
+				AAAA00000000000000000802 /* MWDATCamera in Frameworks */,
+				AAAA00000000000000000803 /* MWDATMockDevice in Frameworks */,
+				AAAA00000000000000000804 /* MWDATDisplay in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AAAA0000000000000000000 = {
+			isa = PBXGroup;
+			children = (
+				AAAA0000000000000000001 /* HermesGlasses */,
+				AAAA0000000000000000005 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AAAA0000000000000000001 /* HermesGlasses */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA00000000000000000101 /* HermesGlassesApp.swift */,
+				AAAA0000000000000000002 /* Views */,
+				AAAA0000000000000000003 /* ViewModels */,
+				AAAA0000000000000000004 /* Services */,
+				AAAA0000000000000000006 /* Models */,
+				AAAA00000000000000000108 /* Assets.xcassets */,
+				AAAA00000000000000000109 /* Info.plist */,
+				AAAA00000000000000000110 /* HermesGlasses.entitlements */,
+			);
+			path = HermesGlasses;
+			sourceTree = "<group>";
+		};
+		AAAA0000000000000000002 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA00000000000000000102 /* ContentView.swift */,
+				AAAA00000000000000000103 /* RegistrationView.swift */,
+				AAAA00000000000000000134 /* PeopleView.swift */,
+				AAAA00000000000000000136 /* SettingsView.swift */,
+				AAAA00000000000000000140 /* LensView.swift */,
+				AAAA00000000000000000816 /* ObjectLogView.swift */,
+				AAAA00000000000000000814 /* ShareSheet.swift */,
+				AAAA00000000000000000818 /* HermesDesign.swift */,
+				AAAA00000000000000000820 /* NavigationMapView.swift */,
+				AAAA00000000000000000830 /* OnboardingView.swift */,
+				AAAA00000000000000000832 /* SimulatedLensView.swift */,
+				AAAA00000000000000000834 /* PhoneModeSessionView.swift */,
+				AAAA00000000000000000846 /* AppDrawerView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		AAAA0000000000000000003 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA00000000000000000104 /* WearablesViewModel.swift */,
+				AAAA00000000000000000105 /* HermesSessionViewModel.swift */,
+				AAAA00000000000000000139 /* LensViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		AAAA0000000000000000004 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA00000000000000000106 /* HermesAudioManager.swift */,
+				AAAA00000000000000000107 /* HermesAPIClient.swift */,
+				AAAA00000000000000000112 /* HermesCameraManager.swift */,
+				AAAA00000000000000000113 /* HermesSpeechRecognizer.swift */,
+				AAAA00000000000000000114 /* HermesSpeechSynthesizer.swift */,
+				AAAA00000000000000000872 /* BargeInPolicy.swift */,
+				AAAA00000000000000000873 /* DisabledWearables.swift */,
+				AAAA00000000000000000875 /* BridgeEndpointConfig.swift */,
+				AAAA00000000000000000115 /* DirectClient.swift */,
+				AAAA00000000000000000116 /* HermesDisplayLogic.swift */,
+				AAAA00000000000000000117 /* HermesDisplayScreens.swift */,
+				AAAA00000000000000000118 /* HermesDisplayManager.swift */,
+				AAAA00000000000000000119 /* DeviceContextFormatter.swift */,
+				AAAA00000000000000000120 /* DeviceContextProvider.swift */,
+				AAAA00000000000000000121 /* AIProvider.swift */,
+				AAAA00000000000000000122 /* AnthropicProvider.swift */,
+				AAAA00000000000000000123 /* OpenAICompatibleProvider.swift */,
+				AAAA00000000000000000124 /* GeminiProvider.swift */,
+				AAAA00000000000000000125 /* NavigationTypes.swift */,
+				AAAA00000000000000000126 /* IntentDetector.swift */,
+				AAAA00000000000000000127 /* PolylineEncoder.swift */,
+				AAAA00000000000000000128 /* MapboxStaticMap.swift */,
+				AAAA00000000000000000129 /* WikipediaImageClient.swift */,
+				AAAA00000000000000000130 /* MapCredentials.swift */,
+				AAAA00000000000000000131 /* NavigationController.swift */,
+				AAAA00000000000000000132 /* Encounter.swift */,
+				AAAA00000000000000000847 /* EncounterEvent.swift */,
+				AAAA00000000000000000849 /* BadgeParser.swift */,
+				AAAA00000000000000000851 /* EncounterTimeline.swift */,
+				AAAA00000000000000000853 /* BadgeReader.swift */,
+				AAAA00000000000000000859 /* TranscriptionService.swift */,
+				AAAA00000000000000000857 /* ConversationRecorder.swift */,
+				AAAA00000000000000000855 /* BadgeRegion.swift */,
+				AAAA00000000000000000861 /* BadgeCrop.swift */,
+				AAAA00000000000000000863 /* BarcodeReader.swift */,
+				AAAA00000000000000000865 /* BadgeDetector.swift */,
+				AAAA00000000000000000867 /* BadgePortrait.swift */,
+				AAAA00000000000000000133 /* EncounterStore.swift */,
+				AAAA00000000000000000142 /* ConversationCapture.swift */,
+				AAAA00000000000000000135 /* VoiceCommandCatalog.swift */,
+				AAAA00000000000000000822 /* LensContent.swift */,
+				AAAA00000000000000000842 /* ChoiceDetector.swift */,
+				AAAA00000000000000000844 /* HermesApp.swift */,
+				AAAA00000000000000000824 /* VisionSource.swift */,
+				AAAA00000000000000000836 /* VisionRouting.swift */,
+				AAAA00000000000000000838 /* Bearing.swift */,
+				AAAA00000000000000000840 /* PlaceSearch.swift */,
+				AAAA00000000000000000826 /* PhoneCameraManager.swift */,
+				AAAA00000000000000000828 /* PermissionsCoordinator.swift */,
+				AAAA00000000000000000137 /* DwellTracker.swift */,
+				AAAA00000000000000000138 /* ObjectDetector.swift */,
+				AAAA00000000000000000812 /* LensPDFRenderer.swift */,
+				AAAA00000000000000000806 /* LensLogAggregator.swift */,
+				AAAA00000000000000000808 /* LensSession.swift */,
+				AAAA00000000000000000810 /* LensSessionStore.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		AAAA0000000000000000006 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA00000000000000000141 /* yolo11n.mlpackage */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		AAAA0000000000000000005 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA00000000000000000111 /* Hermes Glasses.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AAAA00000000000000000301 /* HermesGlasses */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AAAA00000000000000000501 /* Build configuration list for PBXNativeTarget "HermesGlasses" */;
+			buildPhases = (
+				AAAA00000000000000000401 /* Sources */,
+				AAAA00000000000000000402 /* Frameworks */,
+				AAAA00000000000000000403 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = HermesGlasses;
+			packageProductDependencies = (
+				AAAA00000000000000000701 /* MWDATCore */,
+				AAAA00000000000000000702 /* MWDATCamera */,
+				AAAA00000000000000000703 /* MWDATMockDevice */,
+				AAAA00000000000000000704 /* MWDATDisplay */,
+			);
+			productName = HermesGlasses;
+			productReference = AAAA00000000000000000111 /* Hermes Glasses.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AAAA00000000000000000F00 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = {
+					AAAA00000000000000000301 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = AAAA00000000000000000506 /* Build configuration list for PBXProject "HermesGlasses" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AAAA0000000000000000000;
+			packageReferences = (
+				AAAA00000000000000000601 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */,
+			);
+			productRefGroup = AAAA0000000000000000005 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AAAA00000000000000000301 /* HermesGlasses */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AAAA00000000000000000403 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAAA00000000000000000008 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AAAA00000000000000000401 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAAA00000000000000000001 /* HermesGlassesApp.swift in Sources */,
+				AAAA00000000000000000002 /* ContentView.swift in Sources */,
+				AAAA00000000000000000003 /* RegistrationView.swift in Sources */,
+				AAAA00000000000000000004 /* WearablesViewModel.swift in Sources */,
+				AAAA00000000000000000005 /* HermesSessionViewModel.swift in Sources */,
+				AAAA00000000000000000006 /* HermesAudioManager.swift in Sources */,
+				AAAA00000000000000000007 /* HermesAPIClient.swift in Sources */,
+				AAAA00000000000000000009 /* HermesCameraManager.swift in Sources */,
+				AAAA00000000000000000010 /* HermesSpeechRecognizer.swift in Sources */,
+				AAAA00000000000000000011 /* HermesSpeechSynthesizer.swift in Sources */,
+				AAAA00000000000000000871 /* BargeInPolicy.swift in Sources */,
+				AAAA00000000000000000874 /* DisabledWearables.swift in Sources */,
+				AAAA00000000000000000876 /* BridgeEndpointConfig.swift in Sources */,
+				AAAA00000000000000000012 /* DirectClient.swift in Sources */,
+				AAAA00000000000000000013 /* HermesDisplayLogic.swift in Sources */,
+				AAAA00000000000000000014 /* HermesDisplayScreens.swift in Sources */,
+				AAAA00000000000000000015 /* HermesDisplayManager.swift in Sources */,
+				AAAA00000000000000000016 /* DeviceContextFormatter.swift in Sources */,
+				AAAA00000000000000000017 /* DeviceContextProvider.swift in Sources */,
+				AAAA00000000000000000018 /* AIProvider.swift in Sources */,
+				AAAA00000000000000000019 /* AnthropicProvider.swift in Sources */,
+				AAAA00000000000000000020 /* OpenAICompatibleProvider.swift in Sources */,
+				AAAA00000000000000000021 /* GeminiProvider.swift in Sources */,
+				AAAA00000000000000000022 /* NavigationTypes.swift in Sources */,
+				AAAA00000000000000000023 /* IntentDetector.swift in Sources */,
+				AAAA00000000000000000024 /* PolylineEncoder.swift in Sources */,
+				AAAA00000000000000000025 /* MapboxStaticMap.swift in Sources */,
+				AAAA00000000000000000026 /* WikipediaImageClient.swift in Sources */,
+				AAAA00000000000000000027 /* MapCredentials.swift in Sources */,
+				AAAA00000000000000000028 /* NavigationController.swift in Sources */,
+				AAAA00000000000000000029 /* Encounter.swift in Sources */,
+				AAAA00000000000000000848 /* EncounterEvent.swift in Sources */,
+				AAAA00000000000000000850 /* BadgeParser.swift in Sources */,
+				AAAA00000000000000000852 /* EncounterTimeline.swift in Sources */,
+				AAAA00000000000000000854 /* BadgeReader.swift in Sources */,
+				AAAA00000000000000000860 /* TranscriptionService.swift in Sources */,
+				AAAA00000000000000000858 /* ConversationRecorder.swift in Sources */,
+				AAAA00000000000000000856 /* BadgeRegion.swift in Sources */,
+				AAAA00000000000000000862 /* BadgeCrop.swift in Sources */,
+				AAAA00000000000000000864 /* BarcodeReader.swift in Sources */,
+				AAAA00000000000000000866 /* BadgeDetector.swift in Sources */,
+				AAAA00000000000000000868 /* BadgePortrait.swift in Sources */,
+				AAAA00000000000000000030 /* EncounterStore.swift in Sources */,
+				AAAA00000000000000000039 /* ConversationCapture.swift in Sources */,
+				AAAA00000000000000000031 /* PeopleView.swift in Sources */,
+				AAAA00000000000000000032 /* VoiceCommandCatalog.swift in Sources */,
+				AAAA00000000000000000821 /* LensContent.swift in Sources */,
+				AAAA00000000000000000841 /* ChoiceDetector.swift in Sources */,
+				AAAA00000000000000000843 /* HermesApp.swift in Sources */,
+				AAAA00000000000000000845 /* AppDrawerView.swift in Sources */,
+				AAAA00000000000000000823 /* VisionSource.swift in Sources */,
+				AAAA00000000000000000835 /* VisionRouting.swift in Sources */,
+				AAAA00000000000000000837 /* Bearing.swift in Sources */,
+				AAAA00000000000000000839 /* PlaceSearch.swift in Sources */,
+				AAAA00000000000000000825 /* PhoneCameraManager.swift in Sources */,
+				AAAA00000000000000000827 /* PermissionsCoordinator.swift in Sources */,
+				AAAA00000000000000000829 /* OnboardingView.swift in Sources */,
+				AAAA00000000000000000831 /* SimulatedLensView.swift in Sources */,
+				AAAA00000000000000000833 /* PhoneModeSessionView.swift in Sources */,
+				AAAA00000000000000000033 /* SettingsView.swift in Sources */,
+				AAAA00000000000000000034 /* DwellTracker.swift in Sources */,
+				AAAA00000000000000000038 /* yolo11n.mlpackage in Sources */,
+				AAAA00000000000000000035 /* ObjectDetector.swift in Sources */,
+				AAAA00000000000000000036 /* LensViewModel.swift in Sources */,
+				AAAA00000000000000000037 /* LensView.swift in Sources */,
+				AAAA00000000000000000815 /* ObjectLogView.swift in Sources */,
+				AAAA00000000000000000805 /* LensLogAggregator.swift in Sources */,
+				AAAA00000000000000000807 /* LensSession.swift in Sources */,
+				AAAA00000000000000000809 /* LensSessionStore.swift in Sources */,
+				AAAA00000000000000000811 /* LensPDFRenderer.swift in Sources */,
+				AAAA00000000000000000813 /* ShareSheet.swift in Sources */,
+				AAAA00000000000000000817 /* HermesDesign.swift in Sources */,
+				AAAA00000000000000000819 /* NavigationMapView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AAAA00000000000000000502 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AAAA0000000000000000012A /* Hermes.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CODE_SIGN_ENTITLEMENTS = HermesGlasses/HermesGlasses.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HermesGlasses/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.4;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.HermesGlasses;
+				PRODUCT_NAME = "Hermes Glasses";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		AAAA00000000000000000503 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AAAA0000000000000000012A /* Hermes.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CODE_SIGN_ENTITLEMENTS = HermesGlasses/HermesGlasses.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HermesGlasses/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.4;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.HermesGlasses;
+				PRODUCT_NAME = "Hermes Glasses";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		AAAA00000000000000000504 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AAAA00000000000000000505 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AAAA00000000000000000501 /* Build configuration list for PBXNativeTarget "HermesGlasses" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AAAA00000000000000000502 /* Debug */,
+				AAAA00000000000000000503 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AAAA00000000000000000506 /* Build configuration list for PBXProject "HermesGlasses" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AAAA00000000000000000504 /* Debug */,
+				AAAA00000000000000000505 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AAAA00000000000000000601 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/facebook/meta-wearables-dat-ios";
+			requirement = {
+				kind = exactVersion;
+				version = 0.8.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AAAA00000000000000000701 /* MWDATCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAAA00000000000000000601 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
+			productName = MWDATCore;
+		};
+		AAAA00000000000000000702 /* MWDATCamera */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAAA00000000000000000601 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
+			productName = MWDATCamera;
+		};
+		AAAA00000000000000000703 /* MWDATMockDevice */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAAA00000000000000000601 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
+			productName = MWDATMockDevice;
+		};
+		AAAA00000000000000000704 /* MWDATDisplay */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAAA00000000000000000601 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
+			productName = MWDATDisplay;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = AAAA00000000000000000F00 /* Project object */;
+}

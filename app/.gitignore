@@ -1,0 +1,40 @@
+# Xcode
+*.xcuserdata
+*.xcworkspace/xcuserdata/
+DerivedData/
+build/
+
+# SPM
+.swiftpm/
+
+# OS
+.DS_Store
+
+# Hermes
+*.hermes/
+
+# Secrets - real Meta DAT credentials (copy Config/Secrets.example.xcconfig)
+Config/Secrets.xcconfig
+bridge/.env
+
+# Python
+bridge/__pycache__/
+bridge/.venv/
+*.pyc
+nohup.out
+
+# Superpowers scratch (personal paths / device UDIDs - keep local only)
+.superpowers/
+docs/superpowers/plans/
+
+# Xcode user state (any depth)
+**/xcuserdata/
+
+# Claude Code worktrees
+.claude/worktrees/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+
+# Bridge/dashboard/reinstall logs + state: query history, GPS context, tokens in URLs
+.runtime/

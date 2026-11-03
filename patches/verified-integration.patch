@@ -1,0 +1,245 @@
+diff --git a/HermesGlasses/Services/BridgeEndpointConfig.swift b/HermesGlasses/Services/BridgeEndpointConfig.swift
+index 1454797..9aa46de 100644
+--- a/HermesGlasses/Services/BridgeEndpointConfig.swift
++++ b/HermesGlasses/Services/BridgeEndpointConfig.swift
+@@ -50,15 +50,22 @@ enum BridgeEndpointConfig {
+             defaults.set(endpoint.trimmingCharacters(in: .whitespacesAndNewlines),
+                          forKey: endpointKey)
+         }
++        // Deployment can select the existing low-latency speech mode without
++        // leaving a launch override that shadows the user's Settings toggle.
++        let voiceKey = "use_device_tts"
++        if args[voiceKey] != nil {
++            defaults.set(defaults.bool(forKey: voiceKey), forKey: voiceKey)
++        }
+         defer {
+             // Once adopted, stop the arguments shadowing the saved values for
+             // the rest of this launch - otherwise a preset saved now is
+             // merged into the PUSHED dict and the other saved presets are
+             // lost, and an endpoint typed in Settings reads back as the
+             // pushed one.
+-            if args[endpointKey] != nil || args[presetsKey] != nil {
++            if args[endpointKey] != nil || args[presetsKey] != nil || args[voiceKey] != nil {
+                 args[endpointKey] = nil
+                 args[presetsKey] = nil
++                args[voiceKey] = nil
+                 defaults.setVolatileDomain(args, forName: UserDefaults.argumentDomain)
+             }
+         }
+diff --git a/HermesGlasses/Services/HermesAPIClient.swift b/HermesGlasses/Services/HermesAPIClient.swift
+index 117d656..064e45d 100644
+--- a/HermesGlasses/Services/HermesAPIClient.swift
++++ b/HermesGlasses/Services/HermesAPIClient.swift
+@@ -72,7 +72,10 @@ final class HermesAPIClient: NSObject {
+         }
+ 
+         let config = URLSessionConfiguration.default
+-        config.timeoutIntervalForRequest = 10
++        // Agent tool turns can be silent longer than a normal HTTP request.
++        // Match the bridge turn budget with margin rather than cutting off at 10s.
++        config.timeoutIntervalForRequest = 240
++        config.timeoutIntervalForResource = 24 * 60 * 60
+         let urlSession = URLSession(configuration: config)
+         session = urlSession
+ 
+diff --git a/bridge/hermes_bridge.py b/bridge/hermes_bridge.py
+index 927b477..f797c91 100644
+--- a/bridge/hermes_bridge.py
++++ b/bridge/hermes_bridge.py
+@@ -94,17 +94,13 @@ HERMES_API_ENABLED = os.environ.get("HERMES_BRIDGE_API", "1") != "0"
+ HERMES_SESSION_KEY = os.environ.get("HERMES_BRIDGE_SESSION_KEY", "glasses-bridge")
+ CLI_TIMEOUT_S = int(os.environ.get("HERMES_BRIDGE_CLI_TIMEOUT", "180"))
+ 
+-# Glasses-only agent model. Does not change ~/.hermes/config.yaml (desktop
+-# Hermes stays on whatever is configured there). Empty fallback model
+-# disables the second try.
+-HERMES_AGENT_MODEL = os.environ.get("HERMES_AGENT_MODEL", "glm-5.3-flash")
+-HERMES_AGENT_PROVIDER = os.environ.get("HERMES_AGENT_PROVIDER", "zai")
+-HERMES_AGENT_FALLBACK_MODEL = os.environ.get(
+-    "HERMES_AGENT_FALLBACK_MODEL", "google/gemini-3.7-flash"
+-)
+-HERMES_AGENT_FALLBACK_PROVIDER = os.environ.get(
+-    "HERMES_AGENT_FALLBACK_PROVIDER", "openrouter"
+-)
++# Empty overrides use the active Hermes gateway/CLI configuration, including
++# its tools, memory and delegation. Explicit values remain available for a
++# glasses-specific route. Do not ship provider/model names that age out.
++HERMES_AGENT_MODEL = os.environ.get("HERMES_AGENT_MODEL", "")
++HERMES_AGENT_PROVIDER = os.environ.get("HERMES_AGENT_PROVIDER", "")
++HERMES_AGENT_FALLBACK_MODEL = os.environ.get("HERMES_AGENT_FALLBACK_MODEL", "")
++HERMES_AGENT_FALLBACK_PROVIDER = os.environ.get("HERMES_AGENT_FALLBACK_PROVIDER", "")
+ 
+ 
+ def _read_hermes_api_key() -> str:
+@@ -628,6 +624,8 @@ def strip_cli_warnings(text: str) -> str:
+ def agent_model_chain() -> list[tuple[str, str]]:
+     """Primary glasses model, then optional fallback. Dedupes identical pairs."""
+     chain: list[tuple[str, str]] = []
++    if not HERMES_AGENT_MODEL.strip():
++        chain.append(("", ""))
+     for model, provider in (
+         (HERMES_AGENT_MODEL, HERMES_AGENT_PROVIDER),
+         (HERMES_AGENT_FALLBACK_MODEL, HERMES_AGENT_FALLBACK_PROVIDER),
+@@ -639,7 +637,7 @@ def agent_model_chain() -> list[tuple[str, str]]:
+         pair = (model, provider)
+         if pair not in chain:
+             chain.append(pair)
+-    return chain or [("glm-5.3-flash", "zai")]
++    return chain
+ 
+ 
+ def ask_hermes(
+@@ -673,6 +671,8 @@ def ask_hermes(
+             env={**os.environ, "HERMES_NO_COLOR": "1"},
+         )
+         session_id = extract_session_id(result.stderr)
++        if result.returncode != 0:
++            return "Error: Hermes could not complete the request.", None
+         output = strip_cli_warnings(result.stdout.strip())
+         if output:
+             # -Q should print only the reply; if box UI sneaks in, unwrap it
+@@ -688,7 +688,7 @@ def ask_hermes(
+                 if not line.startswith("session_id:")
+             ).strip()
+             err = strip_cli_warnings(err)
+-            return (err or None), session_id
++            return ("Error: Hermes returned no answer." if err else None), None
+         return None, session_id
+     except subprocess.TimeoutExpired:
+         return "Sorry, Hermes took too long to respond.", None
+@@ -835,6 +835,8 @@ async def ask_hermes_api(
+                         payload = json.loads(data)
+                     except json.JSONDecodeError:
+                         continue
++                    if payload.get("error"):
++                        raise RuntimeError("Hermes API reported a stream error")
+                     # Hermes interleaves `event: hermes.tool.progress`
+                     # frames ({"tool":..., "status":"running"}) with the
+                     # completion chunks.
+@@ -872,6 +874,7 @@ async def stream_hermes_reply(
+         last_error = None
+         for model, provider in chain:
+             streamed_any = False
++            tool_started = False
+             this_resume = resume_for_pair(
+                 resume, resume_source, resume_model, resume_provider,
+                 model, provider, "api",
+@@ -882,17 +885,28 @@ async def stream_hermes_reply(
+                 streamed_any = True
+                 await on_text(piece)
+ 
++            async def _tool_tap(event: dict):
++                nonlocal tool_started
++                tool_started = True
++                if on_tool:
++                    await on_tool(event)
++
+             print(f"[Bridge] API try {model}" + (f"/{provider}" if provider else ""))
+             try:
+                 reply, session_id = await ask_hermes_api(
+                     text, photo, this_resume, _tap,
+-                    model=model, provider=provider or None, on_tool=on_tool,
++                    model=model, provider=provider or None, on_tool=_tool_tap,
+                 )
+                 if not reply:
+                     raise RuntimeError("empty API stream")
+                 return reply, session_id, "api", model, provider
+             except Exception as error:  # noqa: BLE001 - next model or CLI
+                 last_error = error
++                if tool_started:
++                    # Retrying could repeat an email, file write or other action.
++                    warning = " The connection stopped after a tool started. Please check the action before retrying."
++                    await on_text(warning)
++                    return warning.strip(), this_resume, "api", model, provider
+                 if streamed_any:
+                     print(f"[Bridge] API stream died after tokens ({error})")
+                     return None, this_resume, "api", model, provider
+@@ -974,7 +988,7 @@ def synthesize_speech(text: str) -> bytes | None:
+     except ImportError:
+         pass
+     except Exception as e:
+-        print(f"[TTS] Edge TTS error: {e}")
++        print(f"[TTS] Edge TTS unavailable ({type(e).__name__}); using local speech")
+ 
+     # Fallback: macOS say command, directly as PCM16 24kHz WAV
+     if not shutil.which("say"):
+diff --git a/bridge/test_hermes_bridge.py b/bridge/test_hermes_bridge.py
+index ca463a5..0cb9064 100644
+--- a/bridge/test_hermes_bridge.py
++++ b/bridge/test_hermes_bridge.py
+@@ -821,3 +821,38 @@ class TestStreamHermesReplyModels(unittest.TestCase):
+ 
+ if __name__ == "__main__":
+     unittest.main()
++
++
++class TestInheritedRoutingAndFailureSafety(unittest.TestCase):
++    def test_empty_overrides_inherit_gateway_default(self):
++        from unittest.mock import patch
++        with patch.multiple(hb, HERMES_AGENT_MODEL='', HERMES_AGENT_PROVIDER='',
++                            HERMES_AGENT_FALLBACK_MODEL='', HERMES_AGENT_FALLBACK_PROVIDER=''):
++            self.assertEqual(hb.agent_model_chain(), [('', '')])
++
++    def test_failed_cli_stdout_is_not_success(self):
++        from unittest.mock import patch
++        import subprocess
++        result = subprocess.CompletedProcess([], 1, 'partial answer', 'failure')
++        with patch.object(hb.subprocess, 'run', return_value=result):
++            answer, sid = hb.ask_hermes('test')
++        self.assertTrue(answer.startswith('Error:'))
++        self.assertIsNone(sid)
++
++    def test_tool_started_failure_never_retries(self):
++        from unittest.mock import patch, AsyncMock, Mock
++        async def run():
++            async def fail(*args, **kwargs):
++                await kwargs['on_tool']({'tool': 'write_file', 'status': 'running'})
++                raise ConnectionError('stream lost')
++            api = AsyncMock(side_effect=fail)
++            cli = Mock()
++            output = AsyncMock()
++            with patch.object(hb, 'agent_model_chain', return_value=[('a','p'),('b','q')]), \
++                 patch.object(hb, 'HERMES_API_ENABLED', True), \
++                 patch.object(hb, 'ask_hermes_api', api), patch.object(hb, 'ask_hermes', cli):
++                result = await hb.stream_hermes_reply('test', None, None, None, None, output)
++            self.assertIn('check the action', result[0])
++            self.assertEqual(api.await_count, 1)
++            cli.assert_not_called()
++        asyncio.run(run())
+diff --git a/scripts/reinstall-iphone.sh b/scripts/reinstall-iphone.sh
+index 06df36a..0ff8945 100755
+--- a/scripts/reinstall-iphone.sh
++++ b/scripts/reinstall-iphone.sh
+@@ -116,8 +116,8 @@ log "building (profiles moved aside: $(ls "$aside" 2>/dev/null | wc -l | tr -d '
+ # wedge every later run.
+ if ! CCC_OVERRIDE_OPTIONS='s/-dM/--version/' with_timeout 1800 xcodebuild \
+         -project "$ROOT/HermesGlasses.xcodeproj" -scheme HermesGlasses \
+-        -destination 'generic/platform=iOS' -derivedDataPath "$DERIVED" \
+-        -allowProvisioningUpdates -quiet build >"$ROOT/.runtime/reinstall-build.log" 2>&1; then
++        -destination "id=$DEVICE" -derivedDataPath "$DERIVED" \
++        -allowProvisioningUpdates -allowProvisioningDeviceRegistration -quiet build >"$ROOT/.runtime/reinstall-build.log" 2>&1; then
+     mv "$aside"/*.mobileprovision "$PROFILES/" 2>/dev/null
+     log "BUILD FAILED - see .runtime/reinstall-build.log"
+     grep -m5 'error:' "$ROOT/.runtime/reinstall-build.log"
+diff --git a/tests/bridge-endpoint/main.swift b/tests/bridge-endpoint/main.swift
+index afb4c06..5d12f11 100644
+--- a/tests/bridge-endpoint/main.swift
++++ b/tests/bridge-endpoint/main.swift
+@@ -67,6 +67,17 @@ if argsBefore[BridgeEndpointConfig.endpointKey] != nil {
+ } else {
+     print("FAIL run with the launch arguments in the header"); failures += 1
+ }
++// Voice launch preference persists, but must not shadow later Settings changes.
++for requested in [true, false] {
++    defaults.setVolatileDomain(["use_device_tts": requested], forName: UserDefaults.argumentDomain)
++    BridgeEndpointConfig.adoptLaunchArguments(defaults: defaults, domainName: suite)
++    expect(defaults.persistentDomain(forName: suite)?["use_device_tts"] as? Bool == requested,
++           "voice preference persisted: \(requested)")
++    expect(defaults.volatileDomain(forName: UserDefaults.argumentDomain)["use_device_tts"] == nil,
++           "voice override cleared")
++    defaults.set(!requested, forKey: "use_device_tts")
++    expect(defaults.bool(forKey: "use_device_tts") == !requested, "Settings remains editable")
++}
+ defaults.removePersistentDomain(forName: suite)
+ 
+ print(failures == 0 ? "ALL PASS" : "\(failures) FAILED")
